@@ -92,7 +92,7 @@
     #ht-logo:hover { opacity: 1; }
 
     #ht-logo img {
-      height: 200px;
+      height: 80px;
       width: auto;
       display: block;
     }
@@ -353,11 +353,12 @@
 
         buildUI(clips);
 
-        // Auto-play the first animation and mark its button active
-        if (clips.length > 0) {
-          playAnimation(clips[0]);
-          document.querySelector('.play-btn')?.classList.add('active');
-        }
+        // Auto-play Boom Dance on load and mark its button active
+        const defaultClip = clips.find(c => ANIM_LABEL_MAP[c.name] === 'Boom Dance') || clips[0];
+        playAnimation(defaultClip);
+        document.querySelectorAll('.play-btn').forEach(btn => {
+          if (btn.textContent === 'Boom Dance') btn.classList.add('active');
+        });
 
         // Hide loading screen
         document.getElementById('loading').classList.add('hidden');
