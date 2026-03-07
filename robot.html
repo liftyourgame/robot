@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robot Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+    }
+
+    canvas { display: block; }
+
+    /* ── Animation picker ─────────────────────────────────────────────── */
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #ui h3 {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 2px;
+    }
+
+    .anim-row button.play-btn {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.75);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .anim-row button.play-btn:hover  { background: rgba(255,255,255,0.14); color: #fff; }
+    .anim-row button.play-btn.active { background: #5566ff; border-color: #7788ff; color: #fff; }
+
+
+    /* ── Loading overlay ──────────────────────────────────────────────── */
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      background: #0a0a0f;
+      transition: opacity 0.6s;
+    }
+
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #5566ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading p { font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; }
+
+    /* ── Humanising Technologies logo ───────────────────────────────── */
+    #ht-logo {
+      position: fixed;
+      bottom: 20px;
+      right: 24px;
+      z-index: 100;
+      display: block;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    #ht-logo:hover { opacity: 1; }
+
+    #ht-logo img {
+      height: 200px;
+      width: auto;
+      display: block;
+    }
+
+    /* ── Current animation label ─────────────────────────────────────── */
+    #anim-label {
+      position: absolute;
+      bottom: 24px;
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading screen -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Loading robot…</p>
+  </div>
+
+  <!-- Animation buttons (populated dynamically) -->
+  <div id="ui"><h3>Animations</h3></div>
+
+  <div id="anim-label">—</div>
+
+  <a href="https://humanisingtechnologies.com" target="_blank" id="ht-logo">
+    <img src="ht-logo.svg" alt="Humanising Technologies" />
+  </a>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE            from 'three';
+    import { GLTFLoader }        from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls }     from 'three/addons/controls/OrbitControls.js';
+
+    // ── Renderer ────────────────────────────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace   = THREE.SRGBColorSpace;
+    renderer.toneMapping        = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    // ── Scene / Camera ──────────────────────────────────────────────────
+    const scene  = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0f);
+    scene.fog        = new THREE.Fog(0x0a0a0f, 10, 30);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 1.4, 3.8);
+
+    // ── Orbit controls ──────────────────────────────────────────────────
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.9, 0);
+    controls.enableDamping    = true;
+    controls.dampingFactor    = 0.08;
+    controls.minDistance      = 1;
+    controls.maxDistance      = 12;
+    controls.maxPolarAngle    = Math.PI * 0.88;
+    controls.update();
+
+    // ── Lighting ────────────────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+    const key = new THREE.DirectionalLight(0xffffff, 3.0);
+    key.position.set(3, 6, 4);
+    key.castShadow              = true;
+    key.shadow.mapSize.width    = 2048;
+    key.shadow.mapSize.height   = 2048;
+    key.shadow.camera.near      = 0.5;
+    key.shadow.camera.far       = 20;
+    key.shadow.camera.top       = 4;
+    key.shadow.camera.bottom    = -2;
+    key.shadow.camera.left      = -4;
+    key.shadow.camera.right     = 4;
+    scene.add(key);
+
+    const fill = new THREE.DirectionalLight(0x8899ff, 1.2);
+    fill.position.set(-4, 2, -2);
+    scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0xffeedd, 0.8);
+    rim.position.set(0, 4, -5);
+    scene.add(rim);
+
+    // ── Ground plane ────────────────────────────────────────────────────
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(4, 64),
+      new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.9 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Subtle grid
+    const grid = new THREE.GridHelper(8, 20, 0x222233, 0x222233);
+    grid.position.y = 0.001;
+    scene.add(grid);
+
+    // ── Animation state ─────────────────────────────────────────────────
+    let mixer        = null;
+    let currentAction = null;
+    const clock      = new THREE.Clock();
+    const animLabel  = document.getElementById('anim-label');
+
+    /**
+     * Convert a snake_case or mixed clip name to Title Case.
+     * e.g. "air_squat" → "Air Squat", "Hip_Hop_Dance_1" → "Hip Hop Dance 1"
+     * @param {string} name
+     * @returns {string}
+     */
+    function formatName(name) {
+      return name
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    /**
+     * Stop all running actions then play the given clip object directly.
+     * Accepts the clip object itself — no name lookup, no mismatch possible.
+     * @param {THREE.AnimationClip} clip
+     */
+    function playAnimation(clip) {
+      const next = mixer.clipAction(clip);
+
+      if (currentAction && currentAction !== next) {
+        mixer.stopAllAction();
+        next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.35).play();
+      } else {
+        next.reset().play();
+      }
+
+      currentAction = next;
+      const labels = loadLabels();
+      animLabel.textContent      = labels[clip.name] || formatName(clip.name);
+      animLabel.dataset.clipName = clip.name;
+      console.log('[anim] playing:', clip.name, '| duration:', clip.duration.toFixed(2) + 's');
+    }
+
+    // ── Hardcoded label corrections (Meshy exported clips with wrong names) ──
+    const ANIM_LABEL_MAP = {
+      'All_Night_Dance'   : 'Running',
+      '360_Power_Spin_Jump': 'Hip Hop Dance 2',
+      'Boom_Dance'        : 'Walking',
+      'Hip_Hop_Dance_1'   : 'Air Squat',
+      'Hip_Hop_Dance_2'   : '360 Power Spin',
+      'Running'           : 'All Night Dance',
+      'Walking'           : 'Boom Dance',
+      'air_squat'         : 'Hip Hop Dance 1',
+    };
+
+    /** Returns the display label for a clip name from the hardcoded map. */
+    function loadLabels() { return ANIM_LABEL_MAP; }
+
+    // ── Build animation picker buttons ──────────────────────────────────
+    /**
+     * @param {THREE.AnimationClip[]} clips
+     */
+    function buildUI(clips) {
+      const ui     = document.getElementById('ui');
+      const labels = loadLabels();
+
+      const sorted = [...clips].sort((a, b) => {
+        const la = labels[a.name] || formatName(a.name);
+        const lb = labels[b.name] || formatName(b.name);
+        return la.localeCompare(lb);
+      });
+
+      sorted.forEach(clip => {
+        const displayName = labels[clip.name] || formatName(clip.name);
+
+        const row = document.createElement('div');
+        row.className = 'anim-row';
+
+        const playBtn = document.createElement('button');
+        playBtn.className   = 'play-btn';
+        playBtn.textContent = displayName;
+
+        playBtn.addEventListener('click', () => {
+          document.querySelectorAll('.play-btn').forEach(b => b.classList.remove('active'));
+          playBtn.classList.add('active');
+          playAnimation(clip);
+        });
+
+        row.appendChild(playBtn);
+        ui.appendChild(row);
+      });
+    }
+
+    // ── Load GLB ────────────────────────────────────────────────────────
+    const loader = new GLTFLoader();
+
+    loader.load(
+      'Meshy_AI_biped/Meshy_AI_Meshy_Merged_Animations.glb',
+
+      (gltf) => {
+        const model = gltf.scene;
+
+        // Enable shadows on every mesh
+        model.traverse(node => {
+          if (node.isMesh) {
+            node.castShadow    = true;
+            node.receiveShadow = true;
+          }
+        });
+
+        // Centre + ground the model
+        const box    = new THREE.Box3().setFromObject(model);
+        const centre = box.getCenter(new THREE.Vector3());
+        const size   = box.getSize(new THREE.Vector3());
+        model.position.x = -centre.x;
+        model.position.y = -box.min.y;   // sit on the ground plane
+        model.position.z = -centre.z;
+
+        // Scale to a consistent ~2 unit height
+        const targetH = 2.0;
+        model.scale.setScalar(targetH / size.y);
+
+        scene.add(model);
+
+        // Re-aim camera / controls after scaling
+        const scaledH = targetH;
+        controls.target.set(0, scaledH * 0.5, 0);
+        camera.position.set(0, scaledH * 0.6, scaledH * 2.2);
+        controls.update();
+
+        // Set up AnimationMixer
+        mixer = new THREE.AnimationMixer(model);
+
+        const clips = gltf.animations;
+
+        // Debug: log exactly what Three.js loaded, in order
+        console.table(clips.map((c, i) => ({
+          index: i,
+          name: c.name,
+          duration: c.duration.toFixed(2) + 's',
+          tracks: c.tracks.length,
+          uuid: c.uuid
+        })));
+
+        buildUI(clips);
+
+        // Auto-play the first animation and mark its button active
+        if (clips.length > 0) {
+          playAnimation(clips[0]);
+          document.querySelector('.play-btn')?.classList.add('active');
+        }
+
+        // Hide loading screen
+        document.getElementById('loading').classList.add('hidden');
+      },
+
+      (xhr) => {
+        // Progress callback — optional
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        document.querySelector('#loading p').textContent = `Loading robot… ${pct}%`;
+      },
+
+      (err) => {
+        console.error('GLTFLoader error:', err);
+        document.querySelector('#loading p').textContent = 'Failed to load model.';
+      }
+    );
+
+    // ── Resize ──────────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ── Render loop ─────────────────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      mixer?.update(delta);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+
+</body>
+</html>
