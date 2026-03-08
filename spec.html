@@ -246,10 +246,27 @@
       gap: 6px;
     }
 
+    .part-preview {
+      background: #f0f4fa;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 8px;
+      min-height: 110px;
+    }
+
+    .part-preview svg {
+      width: 100%;
+      height: auto;
+      max-height: 100px;
+    }
+
     .part-card .part-name {
       font-size: 13px;
       font-weight: 600;
       color: var(--dark);
+      margin-top: 4px;
     }
 
     .part-card .part-bone {
@@ -1460,15 +1477,61 @@
     <h1>Printed Parts</h1>
     <p class="page-subtitle">22 STL files derived from the robot skeleton. Download each and open in Bambu Studio at 50% scale.</p>
 
-    <h2>Head & Neck</h2>
+    <h2>Head &amp; Neck</h2>
     <div class="parts-grid">
+
+      <!-- Head Shell -->
       <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 90 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-head" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8f0fa"/><stop offset="100%" stop-color="#b0c4de"/></linearGradient></defs>
+            <!-- dome -->
+            <path d="M16,58 L16,42 Q16,10 45,10 Q74,10 74,42 L74,58 Z" fill="url(#g-head)" stroke="#4a6888" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- highlight arc -->
+            <path d="M24,44 Q24,20 45,18 Q60,18 67,30" fill="none" stroke="#eef4ff" stroke-width="2" opacity="0.8"/>
+            <!-- visor band -->
+            <rect x="16" y="42" width="58" height="16" rx="4" fill="#7898b8" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- visor glint -->
+            <line x1="22" y1="46" x2="50" y2="46" stroke="#c8ddf8" stroke-width="1.5" opacity="0.7"/>
+            <!-- ear panels -->
+            <rect x="9" y="38" width="9" height="16" rx="2" fill="#a8bcd4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="72" y="38" width="9" height="16" rx="2" fill="#a8bcd4" stroke="#4a6888" stroke-width="1"/>
+            <!-- jaw / chin fill -->
+            <path d="M16,58 Q16,68 32,68 L32,58 Z" fill="#a8bcd4" stroke="#4a6888" stroke-width="1"/>
+            <path d="M74,58 Q74,68 58,68 L58,58 Z" fill="#a8bcd4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="32" y="58" width="26" height="10" rx="2" fill="#b8ccde" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- neck stub -->
+            <rect x="34" y="68" width="22" height="12" rx="3" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+          </svg>
+        </div>
         <div class="part-name">Head Shell</div>
         <div class="part-bone">Head.stl</div>
         <span class="badge red">PETG · 0.1mm</span>
         <a href="specs/stl_parts/Head.stl" download>⬇ Download STL</a>
       </div>
+
+      <!-- Neck Collar -->
       <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-neck" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#9aaec6"/></linearGradient></defs>
+            <!-- top ellipse -->
+            <ellipse cx="45" cy="22" rx="30" ry="11" fill="#c8d8ec" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- inner hole top -->
+            <ellipse cx="45" cy="22" rx="18" ry="6" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- cylinder body -->
+            <path d="M15,22 L15,52 Q15,62 45,62 Q75,62 75,52 L75,22" fill="url(#g-neck)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- side highlight -->
+            <line x1="15" y1="22" x2="15" y2="52" stroke="#4a6888" stroke-width="1.5"/>
+            <line x1="75" y1="22" x2="75" y2="52" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- bottom ellipse -->
+            <ellipse cx="45" cy="52" rx="30" ry="11" fill="#b0c4da" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="45" cy="52" rx="18" ry="6" fill="#8aa2bc" stroke="#4a6888" stroke-width="1"/>
+            <!-- mounting holes -->
+            <circle cx="30" cy="37" r="3" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="60" cy="37" r="3" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
         <div class="part-name">Neck Collar</div>
         <div class="part-bone">neck.stl</div>
         <span class="badge red">PETG · 0.2mm</span>
@@ -1478,25 +1541,98 @@
 
     <h2>Torso</h2>
     <div class="parts-grid">
+
+      <!-- Upper Chest -->
       <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-uchest" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8f0fa"/><stop offset="100%" stop-color="#9aaec6"/></linearGradient></defs>
+            <!-- chest plate main -->
+            <path d="M8,18 Q8,8 18,8 L82,8 Q92,8 92,18 L88,78 Q88,85 50,85 Q12,85 12,78 Z" fill="url(#g-uchest)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- shoulder notches -->
+            <path d="M8,18 Q4,18 4,26 L8,34" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+            <path d="M92,18 Q96,18 96,26 L92,34" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+            <!-- chest panel line -->
+            <line x1="12" y1="44" x2="88" y2="44" stroke="#4a6888" stroke-width="1" stroke-dasharray="4,3"/>
+            <!-- chest details: speaker grille -->
+            <rect x="28" y="22" width="44" height="18" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <line x1="32" y1="26" x2="68" y2="26" stroke="#8aa2bc" stroke-width="1"/>
+            <line x1="32" y1="30" x2="68" y2="30" stroke="#8aa2bc" stroke-width="1"/>
+            <line x1="32" y1="34" x2="68" y2="34" stroke="#8aa2bc" stroke-width="1"/>
+            <!-- LED square -->
+            <rect x="36" y="52" width="28" height="18" rx="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- neck mount hole -->
+            <circle cx="50" cy="8" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
         <div class="part-name">Upper Chest</div>
         <div class="part-bone">Spine02.stl</div>
         <span class="badge yellow">Split print A</span>
         <a href="specs/stl_parts/Spine02.stl" download>⬇ Download STL</a>
       </div>
+
+      <!-- Mid Torso -->
       <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-mid" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#9aaec6"/></linearGradient></defs>
+            <!-- waist shell -->
+            <path d="M14,8 Q14,4 22,4 L68,4 Q76,4 76,8 L80,72 Q80,76 45,76 Q10,76 10,72 Z" fill="url(#g-mid)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- horizontal rib lines -->
+            <line x1="12" y1="24" x2="78" y2="24" stroke="#7898b8" stroke-width="1"/>
+            <line x1="11" y1="42" x2="79" y2="42" stroke="#7898b8" stroke-width="1"/>
+            <line x1="10" y1="60" x2="80" y2="60" stroke="#7898b8" stroke-width="1"/>
+            <!-- side curves -->
+            <path d="M14,8 Q10,30 10,72" fill="none" stroke="#c8d8ec" stroke-width="2" opacity="0.6"/>
+            <!-- cable channel centre -->
+            <rect x="38" y="10" width="14" height="54" rx="3" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
         <div class="part-name">Mid Torso</div>
         <div class="part-bone">Spine01.stl</div>
         <span class="badge yellow">Split print B</span>
         <a href="specs/stl_parts/Spine01.stl" download>⬇ Download STL</a>
       </div>
+
+      <!-- Lower Torso -->
       <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 90 70" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-low" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- shell -->
+            <path d="M16,5 Q16,2 45,2 Q74,2 74,5 L78,55 Q78,62 45,62 Q12,62 12,55 Z" fill="url(#g-low)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- anterior panel detail -->
+            <path d="M24,12 Q24,8 45,8 Q66,8 66,12 L68,50 Q68,55 45,55 Q22,55 22,50 Z" fill="#c8d8ec" stroke="#4a6888" stroke-width="1"/>
+            <!-- spine channel -->
+            <rect x="39" y="14" width="12" height="34" rx="3" fill="#9aaec6" stroke="#4a6888" stroke-width="1"/>
+            <!-- mounting tab bottom -->
+            <rect x="32" y="56" width="26" height="10" rx="3" fill="#a8bcd2" stroke="#4a6888" stroke-width="1.5"/>
+          </svg>
+        </div>
         <div class="part-name">Lower Torso</div>
         <div class="part-bone">Spine.stl</div>
         <span class="badge yellow">Split print B</span>
         <a href="specs/stl_parts/Spine.stl" download>⬇ Download STL</a>
       </div>
+
+      <!-- Hip Pelvis -->
       <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 100 75" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-hip" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- pelvis wide shell -->
+            <path d="M4,18 Q4,8 12,8 L88,8 Q96,8 96,18 L90,56 Q90,65 72,65 L28,65 Q10,65 10,56 Z" fill="url(#g-hip)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- hip joint sockets L+R -->
+            <circle cx="20" cy="50" r="10" fill="#7898b8" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="20" cy="50" r="5" fill="#c8d8ec" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="80" cy="50" r="10" fill="#7898b8" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="80" cy="50" r="5" fill="#c8d8ec" stroke="#4a6888" stroke-width="1"/>
+            <!-- central spine socket top -->
+            <rect x="38" y="4" width="24" height="14" rx="4" fill="#a8bcd2" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- top highlight -->
+            <path d="M12,8 Q50,4 88,8" fill="none" stroke="#eef4ff" stroke-width="1.5" opacity="0.7"/>
+          </svg>
+        </div>
         <div class="part-name">Hip Pelvis</div>
         <div class="part-bone">Hips.stl</div>
         <span class="badge yellow">Split print B</span>
@@ -1506,34 +1642,368 @@
 
     <h2>Left Arm</h2>
     <div class="parts-grid">
-      <div class="part-card"><div class="part-name">Left Shoulder</div><div class="part-bone">LeftShoulder.stl</div><span class="badge red">Needs supports</span><a href="specs/stl_parts/LeftShoulder.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Left Upper Arm</div><div class="part-bone">LeftArm.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/LeftArm.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Left Forearm</div><div class="part-bone">LeftForeArm.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/LeftForeArm.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Left Hand</div><div class="part-bone">LeftHand.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/LeftHand.stl" download>⬇ Download STL</a></div>
+
+      <!-- Shoulder (shared shape, label differs) -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-shl" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8f0fa"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- ball housing dome -->
+            <path d="M12,42 Q12,10 40,10 Q68,10 68,42 L62,62 Q62,70 40,70 Q18,70 18,62 Z" fill="url(#g-shl)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- ball socket -->
+            <circle cx="40" cy="42" r="18" fill="#a8bcd2" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="40" cy="42" r="10" fill="#c8d8ec" stroke="#4a6888" stroke-width="1"/>
+            <!-- highlight -->
+            <path d="M24,28 Q28,18 40,16" fill="none" stroke="#eef4ff" stroke-width="2" opacity="0.8"/>
+            <!-- servo mount slots -->
+            <rect x="14" y="55" width="10" height="8" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <rect x="56" y="55" width="10" height="8" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Shoulder</div>
+        <div class="part-bone">LeftShoulder.stl</div>
+        <span class="badge red">Needs supports</span>
+        <a href="specs/stl_parts/LeftShoulder.stl" download>⬇ Download STL</a>
+      </div>
+
+      <!-- Upper Arm -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-ua" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- upper arm tube — tapered -->
+            <path d="M10,8 L50,8 Q56,8 56,16 L52,84 Q52,92 30,92 Q8,92 8,84 L4,16 Q4,8 10,8 Z" fill="url(#g-ua)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- top cap ellipse -->
+            <ellipse cx="30" cy="8" rx="20" ry="7" fill="#c0d0e4" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- bottom cap ellipse -->
+            <ellipse cx="30" cy="86" rx="22" ry="8" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- knee pivot hole bottom -->
+            <ellipse cx="30" cy="86" rx="10" ry="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- highlight line -->
+            <line x1="10" y1="12" x2="8" y2="80" stroke="#d8e8f8" stroke-width="2" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Upper Arm</div>
+        <div class="part-bone">LeftArm.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/LeftArm.stl" download>⬇ Download STL</a>
+      </div>
+
+      <!-- Forearm -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 52 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-fa" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- forearm tube — slim tapered -->
+            <path d="M8,6 L44,6 Q50,6 50,14 L46,84 Q46,92 26,92 Q6,92 6,84 L2,14 Q2,6 8,6 Z" fill="url(#g-fa)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- top elbow cap -->
+            <ellipse cx="26" cy="6" rx="18" ry="6" fill="#c0d0e4" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- elbow hinge details -->
+            <circle cx="10" cy="14" r="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="42" cy="14" r="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- bottom wrist cap -->
+            <ellipse cx="26" cy="87" rx="20" ry="7" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- wrist servo slot -->
+            <rect x="18" y="82" width="16" height="10" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- highlight -->
+            <line x1="8" y1="10" x2="6" y2="80" stroke="#ddeeff" stroke-width="2" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Forearm</div>
+        <div class="part-bone">LeftForeArm.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/LeftForeArm.stl" download>⬇ Download STL</a>
+      </div>
+
+      <!-- Hand -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 80 90" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-hand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- palm plate -->
+            <rect x="14" y="30" width="52" height="40" rx="6" fill="url(#g-hand)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- wrist cuff top -->
+            <rect x="22" y="18" width="36" height="16" rx="4" fill="#b0c4da" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- fingers ×4 -->
+            <rect x="16" y="70" width="8" height="18" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="28" y="70" width="8" height="20" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="40" y="70" width="8" height="20" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="52" y="70" width="8" height="16" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <!-- thumb -->
+            <rect x="58" y="40" width="16" height="8" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1" transform="rotate(15,66,44)"/>
+            <!-- knuckle line -->
+            <line x1="14" y1="70" x2="66" y2="70" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Hand</div>
+        <div class="part-bone">LeftHand.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/LeftHand.stl" download>⬇ Download STL</a>
+      </div>
     </div>
 
     <h2>Right Arm</h2>
     <div class="parts-grid">
-      <div class="part-card"><div class="part-name">Right Shoulder</div><div class="part-bone">RightShoulder.stl</div><span class="badge red">Needs supports</span><a href="specs/stl_parts/RightShoulder.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Right Upper Arm</div><div class="part-bone">RightArm.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/RightArm.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Right Forearm</div><div class="part-bone">RightForeArm.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/RightForeArm.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Right Hand</div><div class="part-bone">RightHand.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/RightHand.stl" download>⬇ Download STL</a></div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-shr" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8f0fa"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <path d="M12,42 Q12,10 40,10 Q68,10 68,42 L62,62 Q62,70 40,70 Q18,70 18,62 Z" fill="url(#g-shr)" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="40" cy="42" r="18" fill="#a8bcd2" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="40" cy="42" r="10" fill="#c8d8ec" stroke="#4a6888" stroke-width="1"/>
+            <path d="M56,28 Q52,18 40,16" fill="none" stroke="#eef4ff" stroke-width="2" opacity="0.8"/>
+            <rect x="14" y="55" width="10" height="8" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <rect x="56" y="55" width="10" height="8" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Shoulder</div>
+        <div class="part-bone">RightShoulder.stl</div>
+        <span class="badge red">Needs supports</span>
+        <a href="specs/stl_parts/RightShoulder.stl" download>⬇ Download STL</a>
+      </div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-uar" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <path d="M10,8 L50,8 Q56,8 56,16 L52,84 Q52,92 30,92 Q8,92 8,84 L4,16 Q4,8 10,8 Z" fill="url(#g-uar)" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="30" cy="8" rx="20" ry="7" fill="#c0d0e4" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="30" cy="86" rx="22" ry="8" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="30" cy="86" rx="10" ry="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <line x1="50" y1="12" x2="52" y2="80" stroke="#d8e8f8" stroke-width="2" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Upper Arm</div>
+        <div class="part-bone">RightArm.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/RightArm.stl" download>⬇ Download STL</a>
+      </div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 52 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-far" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <path d="M8,6 L44,6 Q50,6 50,14 L46,84 Q46,92 26,92 Q6,92 6,84 L2,14 Q2,6 8,6 Z" fill="url(#g-far)" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="26" cy="6" rx="18" ry="6" fill="#c0d0e4" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="10" cy="14" r="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="42" cy="14" r="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <ellipse cx="26" cy="87" rx="20" ry="7" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <rect x="18" y="82" width="16" height="10" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <line x1="44" y1="10" x2="46" y2="80" stroke="#ddeeff" stroke-width="2" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Forearm</div>
+        <div class="part-bone">RightForeArm.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/RightForeArm.stl" download>⬇ Download STL</a>
+      </div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 80 90" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-handr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <rect x="14" y="30" width="52" height="40" rx="6" fill="url(#g-handr)" stroke="#4a6888" stroke-width="1.5"/>
+            <rect x="22" y="18" width="36" height="16" rx="4" fill="#b0c4da" stroke="#4a6888" stroke-width="1.5"/>
+            <rect x="16" y="70" width="8" height="18" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="28" y="70" width="8" height="20" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="40" y="70" width="8" height="20" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="52" y="70" width="8" height="16" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1"/>
+            <rect x="6" y="40" width="16" height="8" rx="3" fill="#c0d0e4" stroke="#4a6888" stroke-width="1" transform="rotate(-15,14,44)"/>
+            <line x1="14" y1="70" x2="66" y2="70" stroke="#4a6888" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Hand</div>
+        <div class="part-bone">RightHand.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/RightHand.stl" download>⬇ Download STL</a>
+      </div>
     </div>
 
     <h2>Left Leg</h2>
     <div class="parts-grid">
-      <div class="part-card"><div class="part-name">Left Thigh</div><div class="part-bone">LeftUpLeg.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/LeftUpLeg.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Left Shin</div><div class="part-bone">LeftLeg.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/LeftLeg.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Left Foot</div><div class="part-bone">LeftFoot.stl</div><span class="badge red">Needs supports</span><a href="specs/stl_parts/LeftFoot.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Left Toe</div><div class="part-bone">LeftToeBase.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/LeftToeBase.stl" download>⬇ Download STL</a></div>
+
+      <!-- Thigh -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 64 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-lthi" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- thigh — wide top, narrower knee end -->
+            <path d="M4,12 L60,12 Q62,12 62,20 L56,84 Q56,92 32,92 Q8,92 8,84 L2,20 Q2,12 4,12 Z" fill="url(#g-lthi)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- hip ball top -->
+            <ellipse cx="32" cy="12" rx="28" ry="10" fill="#c0d0e4" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="32" cy="12" rx="14" ry="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- knee bottom -->
+            <ellipse cx="32" cy="86" rx="24" ry="8" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="32" cy="86" rx="10" ry="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- panel line -->
+            <line x1="4" y1="48" x2="60" y2="48" stroke="#7898b8" stroke-width="1" stroke-dasharray="4,3"/>
+            <!-- highlight -->
+            <line x1="4" y1="16" x2="2" y2="80" stroke="#ddeeff" stroke-width="2" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Thigh</div>
+        <div class="part-bone">LeftUpLeg.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/LeftUpLeg.stl" download>⬇ Download STL</a>
+      </div>
+
+      <!-- Shin -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 56 110" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-lshin" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- knee cap wide top -->
+            <rect x="2" y="4" width="52" height="18" rx="6" fill="#b0c4da" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- shin tube narrows down -->
+            <path d="M10,22 L46,22 L42,92 Q42,100 28,100 Q14,100 14,92 Z" fill="url(#g-lshin)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- knee hinge holes -->
+            <circle cx="8" cy="13" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="48" cy="13" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- shin panel line -->
+            <line x1="12" y1="58" x2="44" y2="58" stroke="#7898b8" stroke-width="1" stroke-dasharray="3,3"/>
+            <!-- ankle base -->
+            <ellipse cx="28" cy="96" rx="14" ry="5" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- highlight -->
+            <line x1="10" y1="26" x2="14" y2="90" stroke="#ddeeff" stroke-width="2" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Shin</div>
+        <div class="part-bone">LeftLeg.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/LeftLeg.stl" download>⬇ Download STL</a>
+      </div>
+
+      <!-- Foot -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-lft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- ankle housing top -->
+            <rect x="28" y="4" width="34" height="28" rx="5" fill="#b8c8de" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- ankle servo slot -->
+            <rect x="34" y="10" width="22" height="10" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- foot sole plate -->
+            <path d="M6,32 Q6,28 14,28 L86,28 Q94,28 94,35 L94,58 Q94,65 80,65 L20,65 Q6,65 6,58 Z" fill="url(#g-lft)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- sole grip lines -->
+            <line x1="14" y1="55" x2="86" y2="55" stroke="#7898b8" stroke-width="1"/>
+            <line x1="20" y1="60" x2="80" y2="60" stroke="#7898b8" stroke-width="1"/>
+            <!-- toe peg -->
+            <rect x="74" y="36" width="18" height="10" rx="3" fill="#a8bcd2" stroke="#4a6888" stroke-width="1"/>
+            <!-- highlight -->
+            <path d="M14,30 Q50,26 86,30" fill="none" stroke="#ddeeff" stroke-width="1.5" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Foot</div>
+        <div class="part-bone">LeftFoot.stl</div>
+        <span class="badge red">Needs supports</span>
+        <a href="specs/stl_parts/LeftFoot.stl" download>⬇ Download STL</a>
+      </div>
+
+      <!-- Toe -->
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 100 55" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-ltoe" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <!-- toe wedge plate -->
+            <path d="M8,10 L78,10 Q92,10 92,22 L92,40 Q92,48 78,48 L18,48 Q8,48 8,40 Z" fill="url(#g-ltoe)" stroke="#4a6888" stroke-width="1.5"/>
+            <!-- toe tip taper -->
+            <path d="M78,10 Q96,10 96,28 L92,28" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+            <!-- toe joint hinge slots -->
+            <circle cx="16" cy="20" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="16" cy="38" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <!-- grip ridges -->
+            <line x1="30" y1="42" x2="86" y2="42" stroke="#7898b8" stroke-width="1"/>
+            <line x1="36" y1="46" x2="84" y2="46" stroke="#7898b8" stroke-width="1"/>
+            <!-- highlight -->
+            <line x1="18" y1="12" x2="78" y2="12" stroke="#ddeeff" stroke-width="1.5" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="part-name">Left Toe</div>
+        <div class="part-bone">LeftToeBase.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/LeftToeBase.stl" download>⬇ Download STL</a>
+      </div>
     </div>
 
     <h2>Right Leg</h2>
     <div class="parts-grid">
-      <div class="part-card"><div class="part-name">Right Thigh</div><div class="part-bone">RightUpLeg.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/RightUpLeg.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Right Shin</div><div class="part-bone">RightLeg.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/RightLeg.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Right Foot</div><div class="part-bone">RightFoot.stl</div><span class="badge red">Needs supports</span><a href="specs/stl_parts/RightFoot.stl" download>⬇ Download STL</a></div>
-      <div class="part-card"><div class="part-name">Right Toe</div><div class="part-bone">RightToeBase.stl</div><span class="badge green">No supports</span><a href="specs/stl_parts/RightToeBase.stl" download>⬇ Download STL</a></div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 64 100" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-rthi" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="#e0eaf8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <path d="M4,12 L60,12 Q62,12 62,20 L56,84 Q56,92 32,92 Q8,92 8,84 L2,20 Q2,12 4,12 Z" fill="url(#g-rthi)" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="32" cy="12" rx="28" ry="10" fill="#c0d0e4" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="32" cy="12" rx="14" ry="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <ellipse cx="32" cy="86" rx="24" ry="8" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <ellipse cx="32" cy="86" rx="10" ry="4" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <line x1="4" y1="48" x2="60" y2="48" stroke="#7898b8" stroke-width="1" stroke-dasharray="4,3"/>
+            <line x1="60" y1="16" x2="62" y2="80" stroke="#ddeeff" stroke-width="2" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Thigh</div>
+        <div class="part-bone">RightUpLeg.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/RightUpLeg.stl" download>⬇ Download STL</a>
+      </div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 56 110" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-rshin" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <rect x="2" y="4" width="52" height="18" rx="6" fill="#b0c4da" stroke="#4a6888" stroke-width="1.5"/>
+            <path d="M10,22 L46,22 L42,92 Q42,100 28,100 Q14,100 14,92 Z" fill="url(#g-rshin)" stroke="#4a6888" stroke-width="1.5"/>
+            <circle cx="8" cy="13" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="48" cy="13" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <line x1="12" y1="58" x2="44" y2="58" stroke="#7898b8" stroke-width="1" stroke-dasharray="3,3"/>
+            <ellipse cx="28" cy="96" rx="14" ry="5" fill="#9aaec6" stroke="#4a6888" stroke-width="1.5"/>
+            <line x1="46" y1="26" x2="42" y2="90" stroke="#ddeeff" stroke-width="2" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Shin</div>
+        <div class="part-bone">RightLeg.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/RightLeg.stl" download>⬇ Download STL</a>
+      </div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-rft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <rect x="38" y="4" width="34" height="28" rx="5" fill="#b8c8de" stroke="#4a6888" stroke-width="1.5"/>
+            <rect x="44" y="10" width="22" height="10" rx="2" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <path d="M6,32 Q6,28 14,28 L86,28 Q94,28 94,35 L94,58 Q94,65 80,65 L20,65 Q6,65 6,58 Z" fill="url(#g-rft)" stroke="#4a6888" stroke-width="1.5"/>
+            <line x1="14" y1="55" x2="86" y2="55" stroke="#7898b8" stroke-width="1"/>
+            <line x1="20" y1="60" x2="80" y2="60" stroke="#7898b8" stroke-width="1"/>
+            <rect x="8" y="36" width="18" height="10" rx="3" fill="#a8bcd2" stroke="#4a6888" stroke-width="1"/>
+            <path d="M14,30 Q50,26 86,30" fill="none" stroke="#ddeeff" stroke-width="1.5" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Foot</div>
+        <div class="part-bone">RightFoot.stl</div>
+        <span class="badge red">Needs supports</span>
+        <a href="specs/stl_parts/RightFoot.stl" download>⬇ Download STL</a>
+      </div>
+
+      <div class="part-card">
+        <div class="part-preview">
+          <svg viewBox="0 0 100 55" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g-rtoe" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde8f8"/><stop offset="100%" stop-color="#8aaac4"/></linearGradient></defs>
+            <path d="M22,10 L92,10 Q92,10 92,18 L92,40 Q92,48 82,48 L22,48 Q8,48 8,40 L8,22 Q8,10 22,10 Z" fill="url(#g-rtoe)" stroke="#4a6888" stroke-width="1.5"/>
+            <path d="M22,10 Q4,10 4,28 L8,28" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="84" cy="20" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <circle cx="84" cy="38" r="5" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+            <line x1="14" y1="42" x2="70" y2="42" stroke="#7898b8" stroke-width="1"/>
+            <line x1="16" y1="46" x2="66" y2="46" stroke="#7898b8" stroke-width="1"/>
+            <line x1="22" y1="12" x2="82" y2="12" stroke="#ddeeff" stroke-width="1.5" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="part-name">Right Toe</div>
+        <div class="part-bone">RightToeBase.stl</div>
+        <span class="badge green">No supports</span>
+        <a href="specs/stl_parts/RightToeBase.stl" download>⬇ Download STL</a>
+      </div>
     </div>
   </div>
 
