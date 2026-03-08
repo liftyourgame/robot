@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450">
+  <defs>
+    <filter id="eyeGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bodyBloom" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="floorGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#1a4080" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#0a1020" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      #robot-all {
+        transform-box: fill-box;
+        transform-origin: bottom center;
+        animation: bodyBounce 0.5s ease-in-out infinite;
+      }
+      @keyframes bodyBounce {
+        0%,100% { transform: translateY(0px)   rotate(0deg);    }
+        25%     { transform: translateY(-10px)  rotate(-1.8deg); }
+        75%     { transform: translateY(-10px)  rotate( 1.8deg); }
+      }
+      .la-group {
+        transform-box: fill-box;
+        transform-origin: top center;
+        animation: leftArmPump 1s cubic-bezier(0.4,0,0.6,1) infinite;
+      }
+      @keyframes leftArmPump {
+        0%   { transform: rotate(-16deg); }
+        28%  { transform: rotate(-68deg); }
+        52%  { transform: rotate(-14deg); }
+        78%  { transform: rotate( 14deg); }
+        100% { transform: rotate(-16deg); }
+      }
+      .ra-group {
+        transform-box: fill-box;
+        transform-origin: top center;
+        animation: rightArmSweep 1s cubic-bezier(0.4,0,0.6,1) infinite;
+        animation-delay: -0.5s;
+      }
+      @keyframes rightArmSweep {
+        0%   { transform: rotate( 16deg); }
+        28%  { transform: rotate( 68deg); }
+        52%  { transform: rotate( 14deg); }
+        78%  { transform: rotate(-14deg); }
+        100% { transform: rotate( 16deg); }
+      }
+      .head-group {
+        transform-box: fill-box;
+        transform-origin: bottom center;
+        animation: headNod 0.5s ease-in-out infinite;
+      }
+      @keyframes headNod {
+        0%,100% { transform: rotate(0deg)    translateY(0);    }
+        25%     { transform: rotate(-3.5deg) translateY(-2px); }
+        75%     { transform: rotate( 3.5deg) translateY(-2px); }
+      }
+      .eye-l {
+        transform-box: fill-box; transform-origin: center;
+        animation: eyePulse 0.5s ease-in-out infinite;
+      }
+      .eye-r {
+        transform-box: fill-box; transform-origin: center;
+        animation: eyePulse 0.5s ease-in-out infinite;
+        animation-delay: -0.25s;
+      }
+      @keyframes eyePulse {
+        0%,100% { opacity: 1;   transform: scale(1);    }
+        50%     { opacity: 0.4; transform: scale(0.65); }
+      }
+      .led-bar { animation: ledFlash 0.25s step-end infinite; }
+      @keyframes ledFlash {
+        0%,55%  { fill: #5a80a8; }
+        25%,80% { fill: #a8d4ff; }
+      }
+      .beat-ring {
+        fill: none; stroke: #3a6090;
+        transform-box: fill-box; transform-origin: center;
+        animation: beatExpand 1s ease-out infinite;
+      }
+      .br1 { animation-delay:  0s;    stroke-width: 2.5; }
+      .br2 { animation-delay: -0.5s;  stroke-width: 1.8; }
+      @keyframes beatExpand {
+        0%   { transform: scale(0.08); opacity: 0.7; }
+        100% { transform: scale(1);    opacity: 0;   }
+      }
+      .g-shadow {
+        transform-box: fill-box; transform-origin: center;
+        animation: shadowPulse 0.5s ease-in-out infinite;
+      }
+      @keyframes shadowPulse {
+        0%,100% { transform: scaleX(1)    scaleY(1);    opacity: 0.55; }
+        25%,75% { transform: scaleX(0.78) scaleY(0.65); opacity: 0.3;  }
+      }
+      .note {
+        font-size: 20px; font-family: serif; fill: #4a7ab5;
+        animation: floatNote 2s ease-out infinite;
+      }
+      .n1 { animation-delay:  0s;     animation-duration: 2.1s;  }
+      .n2 { animation-delay: -0.7s;   animation-duration: 1.85s; }
+      .n3 { animation-delay: -1.45s;  animation-duration: 2.3s;  }
+      @keyframes floatNote {
+        0%   { opacity: 0;    transform: translateY(0px)   rotate(-8deg);  }
+        18%  { opacity: 0.85; }
+        100% { opacity: 0;    transform: translateY(-68px) rotate(12deg);  }
+      }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="300" height="450" fill="#0e1520"/>
+  <line x1="0" y1="408" x2="300" y2="408" stroke="#1a2840" stroke-width="1"/>
+  <ellipse cx="150" cy="420" rx="100" ry="18" fill="url(#floorGlow)"/>
+
+  <!-- Beat rings -->
+  <circle class="beat-ring br1" cx="150" cy="415" r="88"/>
+  <circle class="beat-ring br2" cx="150" cy="415" r="88"/>
+
+  <!-- Ground shadow -->
+  <ellipse class="g-shadow" cx="150" cy="420" rx="56" ry="9" fill="#000"/>
+
+  <!-- Music notes -->
+  <text class="note n1" x="232" y="190">&#9834;</text>
+  <text class="note n2" x="50"  y="230">&#9835;</text>
+  <text class="note n3" x="244" y="300">&#9833;</text>
+
+  <!-- ROBOT -->
+  <g id="robot-all">
+
+    <!-- Left arm (behind torso) -->
+    <g class="la-group">
+      <ellipse cx="97" cy="147" rx="13" ry="19" fill="#325880" stroke="#5080a8" stroke-width="1"/>
+      <rect x="88" y="144" width="18" height="74" rx="7" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.2"/>
+      <circle cx="97" cy="221" r="9" fill="#243d60" stroke="#5a8ab8" stroke-width="1"/>
+      <rect x="89" y="218" width="16" height="58" rx="6" fill="#325880" stroke="#5080a8" stroke-width="1.2"/>
+      <rect x="83" y="275" width="26" height="18" rx="4" fill="#243d60" stroke="#5080a8" stroke-width="1"/>
+      <rect x="84"  y="293" width="5"  height="13" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="91"  y="293" width="5"  height="15" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="98"  y="293" width="5"  height="15" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="105" y="293" width="5"  height="12" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="74"  y="280" width="12" height="7"  rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8" transform="rotate(-22,80,284)"/>
+    </g>
+
+    <!-- Right arm (behind torso) -->
+    <g class="ra-group">
+      <ellipse cx="203" cy="147" rx="13" ry="19" fill="#325880" stroke="#5080a8" stroke-width="1"/>
+      <rect x="194" y="144" width="18" height="74" rx="7" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.2"/>
+      <circle cx="203" cy="221" r="9" fill="#243d60" stroke="#5a8ab8" stroke-width="1"/>
+      <rect x="195" y="218" width="16" height="58" rx="6" fill="#325880" stroke="#5080a8" stroke-width="1.2"/>
+      <rect x="191" y="275" width="26" height="18" rx="4" fill="#243d60" stroke="#5080a8" stroke-width="1"/>
+      <rect x="190" y="293" width="5"  height="12" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="197" y="293" width="5"  height="15" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="204" y="293" width="5"  height="15" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="211" y="293" width="5"  height="13" rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8"/>
+      <rect x="214" y="280" width="12" height="7"  rx="2" fill="#325880" stroke="#5080a8" stroke-width="0.8" transform="rotate(22,220,284)"/>
+    </g>
+
+    <!-- Legs -->
+    <rect x="116" y="246" width="32" height="70" rx="9" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.2"/>
+    <rect x="113" y="312" width="38" height="15" rx="6" fill="#243d60" stroke="#5080a8" stroke-width="1"/>
+    <rect x="118" y="325" width="26" height="56" rx="7" fill="#325880" stroke="#5080a8" stroke-width="1.2"/>
+    <path d="M104,378 L148,378 Q156,378 156,387 L156,393 Q156,400 148,400 L108,400 Q100,400 100,392 L100,385 Q100,378 104,378 Z" fill="#243d60" stroke="#5080a8" stroke-width="1"/>
+    <path d="M100,378 L114,378 L114,400 L108,400 Q100,400 100,392 Z" fill="#1a2e4a" stroke="#5080a8" stroke-width="0.8"/>
+
+    <rect x="152" y="246" width="32" height="70" rx="9" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.2"/>
+    <rect x="149" y="312" width="38" height="15" rx="6" fill="#243d60" stroke="#5080a8" stroke-width="1"/>
+    <rect x="156" y="325" width="26" height="56" rx="7" fill="#325880" stroke="#5080a8" stroke-width="1.2"/>
+    <path d="M152,378 L196,378 Q200,378 200,385 L200,392 Q200,400 192,400 L156,400 Q148,400 148,392 L148,387 Q148,378 152,378 Z" fill="#243d60" stroke="#5080a8" stroke-width="1"/>
+    <path d="M186,378 L200,378 L200,392 Q200,400 192,400 L186,400 Z" fill="#1a2e4a" stroke="#5080a8" stroke-width="0.8"/>
+
+    <!-- Torso -->
+    <path d="M110,220 Q108,212 118,210 L182,210 Q192,212 190,220 L186,248 L114,248 Z" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.5"/>
+    <circle cx="126" cy="228" r="9" fill="#1e3254" stroke="#5080a8" stroke-width="1"/>
+    <circle cx="126" cy="228" r="4" fill="#2a4a78" stroke="#5080a8" stroke-width="0.8"/>
+    <circle cx="174" cy="228" r="9" fill="#1e3254" stroke="#5080a8" stroke-width="1"/>
+    <circle cx="174" cy="228" r="4" fill="#2a4a78" stroke="#5080a8" stroke-width="0.8"/>
+
+    <rect x="116" y="190" width="68" height="24" rx="6" fill="#325880" stroke="#5080a8" stroke-width="1.5"/>
+    <rect x="114" y="160" width="72" height="32" rx="6" fill="#325880" stroke="#5080a8" stroke-width="1.5"/>
+    <line x1="120" y1="170" x2="180" y2="170" stroke="#5080a8" stroke-width="0.8" opacity="0.5"/>
+    <line x1="120" y1="179" x2="180" y2="179" stroke="#5080a8" stroke-width="0.8" opacity="0.5"/>
+
+    <path d="M108,116 Q106,108 116,106 L184,106 Q194,108 192,116 L188,162 L112,162 Z" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.5"/>
+    <rect x="124" y="114" width="52" height="40" rx="4" fill="#1e3254" stroke="#5080a8" stroke-width="1"/>
+    <line x1="130" y1="122" x2="170" y2="122" stroke="#4a7ab8" stroke-width="0.9"/>
+    <line x1="130" y1="128" x2="170" y2="128" stroke="#4a7ab8" stroke-width="0.9"/>
+    <line x1="130" y1="134" x2="170" y2="134" stroke="#4a7ab8" stroke-width="0.9"/>
+    <rect class="led-bar" x="132" y="142" width="36" height="9" rx="2.5"/>
+
+    <!-- Head group (nods at neck base) -->
+    <g class="head-group">
+      <rect x="141" y="100" width="18" height="16" rx="3" fill="#2a4870" stroke="#5080a8" stroke-width="1"/>
+      <path d="M128,58 Q128,36 150,36 Q172,36 172,58 L172,100 Q172,107 150,107 Q128,107 128,100 Z" fill="#3d6a9a" stroke="#5a8ab8" stroke-width="1.5"/>
+      <path d="M136,42 Q142,38 152,37" stroke="#90c0e8" stroke-width="1.5" fill="none" opacity="0.4"/>
+      <rect x="117" y="66" width="13" height="22" rx="3" fill="#2a4870" stroke="#5080a8" stroke-width="1"/>
+      <rect x="170" y="66" width="13" height="22" rx="3" fill="#2a4870" stroke="#5080a8" stroke-width="1"/>
+      <rect x="128" y="68" width="44" height="22" rx="4" fill="#0e1d38" stroke="#4070a8" stroke-width="1.2"/>
+      <rect x="130" y="70" width="40" height="18" rx="3" fill="#1a3060" opacity="0.6"/>
+      <circle class="eye-l" cx="141" cy="79" r="5" fill="#70d0ff" filter="url(#eyeGlow)"/>
+      <circle class="eye-r" cx="159" cy="79" r="5" fill="#70d0ff" filter="url(#eyeGlow)"/>
+      <rect x="128" y="68" width="44" height="22" rx="4" fill="none" stroke="#60a8ff" stroke-width="0.5" opacity="0.4"/>
+    </g>
+
+  </g>
+
+  <!-- Title -->
+  <text x="150" y="20" text-anchor="middle"
+        font-size="10" font-family="ui-monospace,'Courier New',monospace"
+        fill="#3a6090" letter-spacing="3">BOOM DANCE</text>
+  <text x="150" y="438" text-anchor="middle"
+        font-size="8" font-family="ui-monospace,'Courier New',monospace"
+        fill="#2a4060" letter-spacing="1">Humanising Technologies</text>
+
+</svg>

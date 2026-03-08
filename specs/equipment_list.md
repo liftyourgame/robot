@@ -94,7 +94,22 @@ The robot has 18 motorised joints based on the skeleton:
 
 ---
 
-## 7. Tools
+## 7. Audio
+
+| Component | Spec | Qty | Cost |
+|-----------|------|-----|------|
+| Speaker | 40mm 3W 8Ω round | 1 | ~$8 |
+| I²S Amplifier | MAX98357A breakout board | 1 | ~$10 |
+| MEMS Microphone | INMP441 I²S breakout board | 2 | ~$12 each |
+
+**Subtotal: ~$42**
+
+> All three connect via I²S to Raspberry Pi GPIO — no USB audio adapter needed.
+> Speaker mounts behind the chest grille (T-01). Mics seat inside the ear panels.
+
+---
+
+## 8. Tools
 
 | Tool | Notes |
 |------|-------|
@@ -115,9 +130,10 @@ The robot has 18 motorised joints based on the skeleton:
 | Servos | ~$212 |
 | Electronics & Control | ~$156 |
 | Power | ~$151 |
+| Audio | ~$42 |
 | Fasteners & Hardware | ~$106 |
 | Tools (if not owned) | ~$85 |
-| **Total** | **~$1,833** |
+| **Total** | **~$1,875** |
 
-> Reduce to ~$1,268 with the A1 Mini instead of P1S.  
-> Increase to ~$2,533 with the X1C for carbon-fibre capable printing.
+> Reduce to ~$1,310 with the A1 Mini instead of P1S.  
+> Increase to ~$2,575 with the X1C for carbon-fibre capable printing.

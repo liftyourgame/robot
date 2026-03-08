@@ -30,6 +30,11 @@ Joints between panels are either servo-driven or passive pivot connectors.
 | H-03 | Head top cap | 1 | `head_end` bone; closes the crown |
 | H-04 | Neck collar | 1 | `neck` bone; connects to Spine02; houses head-pan servo |
 
+### Ear Panel — Microphone Cutout
+After printing H-01, drill or cut a **12 mm diameter hole** centred on the inner face of each ear panel.
+The INMP441 MEMS microphone module (10 × 10 mm) seats flush inside. Secure with hot glue.
+Route the cable through the neck channel down to the chest electronics tray.
+
 ---
 
 ## TORSO (5 parts)
@@ -38,11 +43,17 @@ Joints between panels are either servo-driven or passive pivot connectors.
 
 | # | Part | Qty | Notes |
 |---|------|-----|-------|
-| T-01 | Upper chest — front plate | 1 | `Spine02` bone; speaker/LED panel optional |
+| T-01 | Upper chest — front plate | 1 | `Spine02` bone; speaker grille + LED panel; print 40mm speaker mount ring on inside face |
 | T-02 | Upper chest — rear plate | 1 | Mirror of T-01; cable routing channels |
 | T-03 | Mid torso shell | 1 | `Spine01` bone; spans waist |
 | T-04 | Lower torso / abdomen shell | 1 | `Spine` bone |
 | T-05 | Hip pelvis shell | 1 | `Hips` bone; central structural hub; mounts all leg servos |
+
+---
+
+### Chest — Speaker Mount
+The inside face of T-01 should include a **42 mm internal diameter ring boss** (2 mm tall, 2 mm wall) to locate the 40mm speaker.
+Four M3 heat-set inserts at 90° intervals hold the speaker and MAX98357A amplifier board. Add this feature when designing the final printable STL from the Blender export.
 
 ---
 

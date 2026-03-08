@@ -510,6 +510,9 @@
     <a href="#" onclick="show('electronics', this)">
       <span class="icon">🔌</span> Electronics & Wiring
     </a>
+    <a href="#" onclick="show('audio', this)">
+      <span class="icon">🔊</span> Audio System
+    </a>
     <a href="#" onclick="show('power', this)">
       <span class="icon">🔋</span> Power System
     </a>
@@ -1600,11 +1603,99 @@
       <tr><td>Wire strippers</td><td>22–28 AWG</td></tr>
     </table>
 
+    <!-- ── Audio ── -->
+    <h2>Audio</h2>
+    <div class="product-grid">
+
+      <!-- 40mm Speaker -->
+      <div class="product-card">
+        <svg viewBox="0 0 100 90" width="100" height="90">
+          <!-- speaker body -->
+          <circle cx="50" cy="45" r="36" fill="#222" stroke="#444" stroke-width="2"/>
+          <!-- surround -->
+          <circle cx="50" cy="45" r="28" fill="none" stroke="#555" stroke-width="4"/>
+          <!-- cone -->
+          <circle cx="50" cy="45" r="20" fill="#1a1a1a" stroke="#444" stroke-width="1.5"/>
+          <!-- dust cap -->
+          <circle cx="50" cy="45" r="9" fill="#333" stroke="#555" stroke-width="1"/>
+          <!-- mounting holes -->
+          <circle cx="20" cy="15" r="3" fill="#111" stroke="#666" stroke-width="1"/>
+          <circle cx="80" cy="15" r="3" fill="#111" stroke="#666" stroke-width="1"/>
+          <circle cx="20" cy="75" r="3" fill="#111" stroke="#666" stroke-width="1"/>
+          <circle cx="80" cy="75" r="3" fill="#111" stroke="#666" stroke-width="1"/>
+          <!-- terminals -->
+          <rect x="44" y="3" width="5" height="7" rx="1" fill="#c80"/>
+          <rect x="51" y="3" width="5" height="7" rx="1" fill="#888"/>
+        </svg>
+        <div class="pc-name">40mm Speaker</div>
+        <div class="pc-price">~$8</div>
+        <div class="pc-sub">3W · 8Ω<br>Mounts behind chest grille</div>
+      </div>
+
+      <!-- MAX98357A I²S Amp -->
+      <div class="product-card">
+        <svg viewBox="0 0 100 90" width="100" height="90">
+          <!-- PCB -->
+          <rect x="15" y="20" width="70" height="50" rx="4" fill="#1a4a1a" stroke="#2a6a2a" stroke-width="1.5"/>
+          <!-- main IC -->
+          <rect x="34" y="30" width="32" height="22" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+          <text font-size="5.5" fill="#aaa" x="50" y="38" text-anchor="middle" font-family="monospace">MAX</text>
+          <text font-size="5.5" fill="#aaa" x="50" y="46" text-anchor="middle" font-family="monospace">98357A</text>
+          <!-- pins left -->
+          <rect x="8"  y="28" width="8" height="3" rx="1" fill="#c8a000"/>
+          <rect x="8"  y="34" width="8" height="3" rx="1" fill="#c8a000"/>
+          <rect x="8"  y="40" width="8" height="3" rx="1" fill="#c8a000"/>
+          <rect x="8"  y="46" width="8" height="3" rx="1" fill="#c8a000"/>
+          <rect x="8"  y="52" width="8" height="3" rx="1" fill="#c8a000"/>
+          <!-- pins right -->
+          <rect x="84" y="34" width="8" height="3" rx="1" fill="#c8a000"/>
+          <rect x="84" y="42" width="8" height="3" rx="1" fill="#c8a000"/>
+          <!-- labels -->
+          <text font-size="5" fill="#4f4" x="50" y="62" text-anchor="middle" font-family="monospace">I²S AMP</text>
+        </svg>
+        <div class="pc-name">MAX98357A Amp</div>
+        <div class="pc-price">~$10</div>
+        <div class="pc-sub">I²S · 3W mono<br>Connects to Pi GPIO</div>
+      </div>
+
+      <!-- INMP441 Mic ×2 -->
+      <div class="product-card">
+        <svg viewBox="0 0 100 90" width="100" height="90">
+          <!-- PCB -->
+          <rect x="20" y="18" width="60" height="54" rx="4" fill="#1a1a4a" stroke="#2a2a6a" stroke-width="1.5"/>
+          <!-- MEMS capsule (small square chip) -->
+          <rect x="36" y="26" width="28" height="28" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+          <!-- mic port hole -->
+          <circle cx="50" cy="40" r="4" fill="#000" stroke="#333" stroke-width="0.5"/>
+          <!-- header pins -->
+          <rect x="28" y="60" width="5" height="8" rx="1" fill="#c8a000"/>
+          <rect x="36" y="60" width="5" height="8" rx="1" fill="#c8a000"/>
+          <rect x="44" y="60" width="5" height="8" rx="1" fill="#c8a000"/>
+          <rect x="52" y="60" width="5" height="8" rx="1" fill="#c8a000"/>
+          <rect x="60" y="60" width="5" height="8" rx="1" fill="#c8a000"/>
+          <!-- I2S label -->
+          <text font-size="5" fill="#88f" x="50" y="18" text-anchor="middle" font-family="monospace">I²S MEMS MIC</text>
+          <text font-size="5" fill="#88f" x="50" y="78" text-anchor="middle" font-family="monospace">INMP441</text>
+        </svg>
+        <div class="pc-name">INMP441 Mic ×2</div>
+        <div class="pc-price">~$12 each</div>
+        <div class="pc-sub">I²S MEMS · 3.3V<br>One per ear panel</div>
+      </div>
+
+    </div>
+    <table>
+      <tr><th>Component</th><th>Qty</th><th>Unit</th><th>Total</th></tr>
+      <tr><td>40mm 3W 8Ω Speaker</td><td>1</td><td>$8</td><td>$8</td></tr>
+      <tr><td>MAX98357A I²S Amplifier</td><td>1</td><td>$10</td><td>$10</td></tr>
+      <tr><td>INMP441 I²S MEMS Microphone</td><td>2</td><td>$12</td><td>$24</td></tr>
+      <tr><td colspan="3"><strong>Audio Subtotal</strong></td><td><strong>~$42</strong></td></tr>
+    </table>
+
     <div class="cost-total">
       <div>
         <div style="font-size:13px;color:#aaa;">Total build cost (P1S)</div>
-        <div class="amount">~$1,833 AUD</div>
-        <div class="note">~$1,268 with A1 Mini &nbsp;|&nbsp; ~$2,533 with X1C</div>
+        <div class="amount">~$1,875 AUD</div>
+        <div class="note">~$1,310 with A1 Mini &nbsp;|&nbsp; ~$2,575 with X1C</div>
       </div>
       <div style="font-size:40px">🤖</div>
     </div>
@@ -2790,6 +2881,179 @@
     </div>
   </div>
 
+  <!-- AUDIO ───────────────────────────────────────────────────────────── -->
+  <div class="page" id="page-audio">
+    <h1>Audio System</h1>
+    <p class="page-subtitle">A 40mm speaker behind the chest grille and two MEMS microphones inside the ear panels, all connected via I²S to the Raspberry Pi 5.</p>
+
+    <h2>Component Placement</h2>
+
+    <!-- Placement diagram: head cross-section + chest speaker -->
+    <figure class="diagram">
+      <svg viewBox="0 0 580 220" xmlns="http://www.w3.org/2000/svg" style="max-width:560px">
+        <defs><style>.ab{font:11px system-ui,sans-serif;fill:#222;text-anchor:middle;dominant-baseline:middle}.as{font:9px system-ui,sans-serif;fill:#555;text-anchor:middle;dominant-baseline:middle}</style></defs>
+
+        <!-- HEAD cross-section (left half) -->
+        <rect x="10" y="20" width="230" height="190" rx="8" fill="#f8f8f8" stroke="#ddd" stroke-width="1"/>
+        <text class="ab" x="125" y="36" font-weight="700" fill="#444">Head — Top View (cross-section)</text>
+
+        <!-- head shell outline -->
+        <ellipse cx="125" cy="115" rx="70" ry="70" fill="#dce6f5" stroke="#4a6888" stroke-width="1.5"/>
+        <!-- inner cavity -->
+        <ellipse cx="125" cy="115" rx="52" ry="54" fill="#eef3fc" stroke="#4a6888" stroke-width="1" stroke-dasharray="4,2"/>
+
+        <!-- Left ear panel -->
+        <rect x="48" y="100" width="16" height="30" rx="3" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+        <!-- Mic module inside left ear -->
+        <rect x="54" y="106" width="10" height="10" rx="1" fill="#1a1a4a" stroke="#4a6888" stroke-width="1"/>
+        <circle cx="59" cy="111" r="2.5" fill="#000" stroke="#444" stroke-width="0.5"/>
+        <text class="as" x="52" y="93" fill="#2244aa">INMP441</text>
+        <text class="as" x="52" y="84" fill="#2244aa">Left Mic</text>
+        <line x1="59" y1="92" x2="59" y2="106" stroke="#2244aa" stroke-width="0.8" stroke-dasharray="2,1"/>
+
+        <!-- Right ear panel -->
+        <rect x="186" y="100" width="16" height="30" rx="3" fill="#b0c4da" stroke="#4a6888" stroke-width="1"/>
+        <!-- Mic module inside right ear -->
+        <rect x="186" y="106" width="10" height="10" rx="1" fill="#1a1a4a" stroke="#4a6888" stroke-width="1"/>
+        <circle cx="191" cy="111" r="2.5" fill="#000" stroke="#444" stroke-width="0.5"/>
+        <text class="as" x="198" y="93" fill="#2244aa">INMP441</text>
+        <text class="as" x="198" y="84" fill="#2244aa">Right Mic</text>
+        <line x1="191" y1="92" x2="191" y2="106" stroke="#2244aa" stroke-width="0.8" stroke-dasharray="2,1"/>
+
+        <!-- 12mm cutout label -->
+        <text class="as" x="56" y="172" fill="#900">12mm cutout</text>
+        <line x1="56" y1="140" x2="56" y2="166" stroke="#900" stroke-width="0.8" stroke-dasharray="2,1"/>
+        <!-- nose/front marker -->
+        <path d="M125,175 L118,188 L132,188 Z" fill="#7898b8" stroke="#4a6888" stroke-width="1"/>
+        <text class="as" x="125" y="198" fill="#666">front</text>
+
+        <!-- cable path dashed lines from mics to centre -->
+        <line x1="64" y1="116" x2="125" y2="116" stroke="#2244aa" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <line x1="186" y1="116" x2="125" y2="116" stroke="#2244aa" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <circle cx="125" cy="116" r="4" fill="#2244aa" stroke="#fff" stroke-width="1"/>
+        <text class="as" x="125" y="148" fill="#2244aa">to neck cable</text>
+
+        <!-- CHEST diagram (right half) -->
+        <rect x="260" y="20" width="310" height="190" rx="8" fill="#f8f8f8" stroke="#ddd" stroke-width="1"/>
+        <text class="ab" x="415" y="36" font-weight="700" fill="#444">Chest — Front View (internal)</text>
+
+        <!-- chest shell outline -->
+        <rect x="310" y="50" width="210" height="148" rx="8" fill="#dce6f5" stroke="#4a6888" stroke-width="1.5"/>
+        <!-- grille area -->
+        <rect x="340" y="62" width="150" height="60" rx="4" fill="#c0d0e8" stroke="#4a6888" stroke-width="1"/>
+        <text class="as" x="415" y="74" fill="#4a6888">speaker grille</text>
+        <!-- grille lines -->
+        <line x1="348" y1="80" x2="482" y2="80" stroke="#7898b8" stroke-width="0.8"/>
+        <line x1="348" y1="87" x2="482" y2="87" stroke="#7898b8" stroke-width="0.8"/>
+        <line x1="348" y1="94" x2="482" y2="94" stroke="#7898b8" stroke-width="0.8"/>
+        <line x1="348" y1="101" x2="482" y2="101" stroke="#7898b8" stroke-width="0.8"/>
+        <line x1="348" y1="108" x2="482" y2="108" stroke="#7898b8" stroke-width="0.8"/>
+
+        <!-- Speaker circle behind grille -->
+        <circle cx="415" cy="91" r="28" fill="none" stroke="#900" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <circle cx="415" cy="91" r="20" fill="none" stroke="#900" stroke-width="1"/>
+        <circle cx="415" cy="91" r="8" fill="#f0dada" stroke="#900" stroke-width="1"/>
+        <text class="as" x="415" y="91" fill="#900">3W SPK</text>
+
+        <!-- MAX98357A amp module -->
+        <rect x="338" y="140" width="70" height="36" rx="4" fill="#1a4a1a" stroke="#2a6a2a" stroke-width="1.5"/>
+        <text class="as" x="373" y="153" fill="#4f4">MAX98357A</text>
+        <text class="as" x="373" y="164" fill="#4f4">I²S Amp</text>
+
+        <!-- wire from amp to speaker -->
+        <line x1="373" y1="140" x2="415" y2="119" stroke="#900" stroke-width="1.2" stroke-dasharray="3,2"/>
+        <text class="as" x="385" y="130" fill="#900">speaker wire</text>
+
+        <!-- wire from amp down (to Pi) -->
+        <line x1="373" y1="176" x2="373" y2="193" stroke="#2244aa" stroke-width="1" stroke-dasharray="3,2"/>
+        <text class="as" x="373" y="204" fill="#2244aa">I²S → Pi GPIO</text>
+
+        <!-- mounting label -->
+        <text class="as" x="480" y="155" fill="#900">M3 bolts ×4</text>
+        <text class="as" x="480" y="165" fill="#900">mount ring</text>
+        <line x1="463" y1="91" x2="474" y2="152" stroke="#900" stroke-width="0.8" stroke-dasharray="2,1"/>
+      </svg>
+      <figcaption>Audio placement — left: ear panel microphone positions (top-view cross-section); right: chest cavity speaker + amplifier layout.</figcaption>
+    </figure>
+
+    <h2>Speaker Wiring (MAX98357A → Pi)</h2>
+    <table>
+      <tr><th>MAX98357A Pin</th><th>Raspberry Pi GPIO</th><th>Notes</th></tr>
+      <tr><td>VIN</td><td>5V (Pin 2)</td><td>Power</td></tr>
+      <tr><td>GND</td><td>GND (Pin 9)</td><td></td></tr>
+      <tr><td>DIN</td><td>GPIO 21 — PCM_DOUT (Pin 40)</td><td>I²S data out</td></tr>
+      <tr><td>BCLK</td><td>GPIO 18 — PCM_CLK (Pin 12)</td><td>Bit clock</td></tr>
+      <tr><td>LRCLK</td><td>GPIO 19 — PCM_FS (Pin 35)</td><td>Left/right clock</td></tr>
+      <tr><td>GAIN</td><td>Leave floating</td><td>= +9 dB (default)</td></tr>
+      <tr><td>SD</td><td>Leave floating</td><td>= left+right mixed to mono</td></tr>
+      <tr><td>Speaker+</td><td colspan="2">Red wire → speaker + terminal</td></tr>
+      <tr><td>Speaker−</td><td colspan="2">Black wire → speaker − terminal</td></tr>
+    </table>
+
+    <h2>Microphone Wiring (INMP441 × 2 → Pi)</h2>
+    <p>Both mics share the same I²S clock lines. Left/right channel is set by the <strong>L/R</strong> pin on each module.</p>
+    <table>
+      <tr><th>INMP441 Pin</th><th>Left Mic (Raspberry Pi)</th><th>Right Mic (Raspberry Pi)</th></tr>
+      <tr><td>VDD</td><td>3.3V (Pin 1)</td><td>3.3V (Pin 1)</td></tr>
+      <tr><td>GND</td><td>GND (Pin 6)</td><td>GND (Pin 6)</td></tr>
+      <tr><td>SD</td><td>GPIO 20 — PCM_DIN (Pin 38)</td><td>GPIO 20 — PCM_DIN (Pin 38) <em>shared</em></td></tr>
+      <tr><td>SCK</td><td>GPIO 18 — PCM_CLK (Pin 12)</td><td>GPIO 18 — PCM_CLK (Pin 12) <em>shared</em></td></tr>
+      <tr><td>WS</td><td>GPIO 19 — PCM_FS (Pin 35)</td><td>GPIO 19 — PCM_FS (Pin 35) <em>shared</em></td></tr>
+      <tr><td>L/R</td><td><strong>GND</strong> → left channel</td><td><strong>3.3V</strong> → right channel</td></tr>
+    </table>
+
+    <div class="callout info">
+      <strong>Cable routing:</strong> Run mic cables down through the neck channel and into the chest cavity alongside the servo signal harness. Use cable management clips (S-06) to keep them tidy. Keep I²S wire runs under 200 mm total to avoid signal degradation.
+    </div>
+
+    <h2>Ear Panel Cutout</h2>
+    <p>Each ear panel (part of the Head Shell) requires a <strong>12 mm diameter hole</strong> centred on the inner face to seat the INMP441 module. Use a drill press or rotary tool after printing. The module snaps in and is held with a dab of hot glue.</p>
+
+    <h2>Software Setup</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Enable I²S overlay</h3>
+          <pre><code>sudo nano /boot/config.txt
+# Add these lines:
+dtparam=i2s=on
+dtoverlay=googlevoicehat-soundcard</code></pre>
+          <p>Reboot after saving. The <code>googlevoicehat-soundcard</code> overlay works with both the MAX98357A and INMP441.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Test microphone input</h3>
+          <pre><code># Record 5 seconds from left mic
+arecord -D plughw:0 -c2 -r 16000 -f S32_LE -d 5 test.wav
+aplay test.wav</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Test speaker output</h3>
+          <pre><code># Play a test tone
+speaker-test -t wav -c 1
+# Or play a file
+aplay -D plughw:1 your_audio.wav</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Install Python audio libraries</h3>
+          <pre><code>pip3 install pyaudio SpeechRecognition pyttsx3
+# Optional: OpenAI Whisper for on-device speech recognition
+pip3 install openai-whisper</code></pre>
+          <p>Use <code>SpeechRecognition</code> for voice commands and <code>pyttsx3</code> for text-to-speech through the chest speaker.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- POWER ────────────────────────────────────────────────────────────── -->
   <div class="page" id="page-power">
     <h1>Power System</h1>
@@ -3015,13 +3279,16 @@ print("Gyro:", gyro)</code></pre>
       <tr><td>Ball bearings MR83ZZ (20pk)</td><td>1</td><td>$14</td><td>$14</td></tr>
       <tr><td>PETG Filament 1kg</td><td>3</td><td>$35</td><td>$105</td></tr>
       <tr><td>TPU Filament 0.5kg</td><td>1</td><td>$35</td><td>$35</td></tr>
+      <tr><td>40mm 3W 8Ω Speaker</td><td>1</td><td>$8</td><td>$8</td></tr>
+      <tr><td>MAX98357A I²S Amplifier</td><td>1</td><td>$10</td><td>$10</td></tr>
+      <tr><td>INMP441 MEMS Microphone</td><td>2</td><td>$12</td><td>$24</td></tr>
     </table>
 
     <div class="cost-total">
       <div>
         <div style="font-size:13px;color:#aaa;">Total (excl. printer &amp; tools)</div>
-        <div class="amount">~$766 AUD</div>
-        <div class="note">Add ~$990 for Bambu Lab P1S printer → <strong>~$1,833 total</strong></div>
+        <div class="amount">~$808 AUD</div>
+        <div class="note">Add ~$990 for Bambu Lab P1S printer → <strong>~$1,875 total</strong></div>
       </div>
       <div style="font-size:40px">🧾</div>
     </div>
