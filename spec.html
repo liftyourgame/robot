@@ -521,6 +521,9 @@
     <a href="#" onclick="show('software', this)">
       <span class="icon">💻</span> Software Setup
     </a>
+    <a href="#" onclick="show('ai', this)">
+      <span class="icon">🤖</span> AI / LLM Setup
+    </a>
 
     <div class="section-label">Reference</div>
     <a href="#" onclick="show('bom', this)">
@@ -3234,6 +3237,336 @@ print("Gyro:", gyro)</code></pre>
     </div>
   </div>
 
+  <!-- AI / LLM ─────────────────────────────────────────────────────────── -->
+  <div class="page" id="page-ai">
+    <h1>AI / LLM Setup</h1>
+    <p class="page-subtitle">Run <strong>Phi-3 Mini</strong> locally on the Pi 5 8GB using llama.cpp for natural language conversation, voice commands, and task planning — no internet required.</p>
+
+    <div class="callout info">
+      <strong>Why Phi-3 Mini?</strong> Microsoft's 3.8B parameter model delivers GPT-3.5-level reasoning in a ~2.3GB quantized file. At Q4 quantization it runs at 5–15 tokens/sec on the Pi 5 — slow but perfectly usable for a robot that speaks in short sentences.
+    </div>
+
+    <h2>Architecture Overview</h2>
+    <figure class="diagram">
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" style="max-width:600px;width:100%">
+        <defs>
+          <style>.lb{font:11px system-ui,sans-serif;fill:#222;text-anchor:middle;dominant-baseline:middle}.ls{font:9px system-ui,sans-serif;fill:#555;text-anchor:middle;dominant-baseline:middle}</style>
+          <marker id="arr7" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#555"/></marker>
+        </defs>
+        <!-- Mic input -->
+        <rect x="10" y="70" width="90" height="60" rx="7" fill="#e8eeff" stroke="#446" stroke-width="1.5"/>
+        <text class="lb" x="55" y="94" font-weight="700">SPH0645</text>
+        <text class="ls" x="55" y="108">Microphone ×2</text>
+        <text class="ls" x="55" y="120">I²S input</text>
+        <!-- Arrow to Whisper -->
+        <line x1="100" y1="100" x2="140" y2="100" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+        <!-- Whisper -->
+        <rect x="142" y="70" width="100" height="60" rx="7" fill="#fff8e0" stroke="#a60" stroke-width="1.5"/>
+        <text class="lb" x="192" y="90" font-weight="700">Whisper</text>
+        <text class="ls" x="192" y="104">Speech → Text</text>
+        <text class="ls" x="192" y="116">tiny / base model</text>
+        <!-- Arrow to Phi-3 -->
+        <line x1="242" y1="100" x2="282" y2="100" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+        <!-- Phi-3 -->
+        <rect x="284" y="55" width="120" height="90" rx="7" fill="#e8ffe8" stroke="#2a6" stroke-width="2"/>
+        <text class="lb" x="344" y="82" font-weight="700">Phi-3 Mini</text>
+        <text class="ls" x="344" y="96">llama.cpp</text>
+        <text class="ls" x="344" y="108">3.8B Q4_K_M</text>
+        <text class="ls" x="344" y="120">~2.3GB RAM</text>
+        <text class="ls" x="344" y="132" fill="#2a6">5–15 tok/s</text>
+        <!-- Arrow to TTS -->
+        <line x1="404" y1="100" x2="444" y2="100" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+        <!-- TTS -->
+        <rect x="446" y="70" width="90" height="60" rx="7" fill="#ffe8e8" stroke="#900" stroke-width="1.5"/>
+        <text class="lb" x="491" y="90" font-weight="700">pyttsx3</text>
+        <text class="ls" x="491" y="104">Text → Speech</text>
+        <text class="ls" x="491" y="116">offline TTS</text>
+        <!-- Arrow to speaker -->
+        <line x1="536" y1="100" x2="576" y2="100" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+        <!-- Speaker -->
+        <rect x="578" y="70" width="36" height="60" rx="7" fill="#ffe8e8" stroke="#900" stroke-width="1.5"/>
+        <text class="lb" x="596" y="94">🔊</text>
+        <text class="ls" x="596" y="114">MAX</text>
+        <text class="ls" x="596" y="124">98357A</text>
+        <!-- Robot command arrow down from Phi-3 -->
+        <line x1="344" y1="145" x2="344" y2="178" stroke="#2a6" stroke-width="1.5" marker-end="url(#arr7)"/>
+        <rect x="264" y="180" width="160" height="28" rx="5" fill="#f0fff0" stroke="#2a6" stroke-width="1.2"/>
+        <text class="ls" x="344" y="194" fill="#2a6" font-weight="700">Servo commands → PCA9685</text>
+      </svg>
+      <figcaption style="text-align:center;font-size:12px;color:#888;margin-top:6px">Voice pipeline: mic → Whisper STT → Phi-3 reasoning → pyttsx3 TTS + servo commands</figcaption>
+    </figure>
+
+    <h2>Step 1 — Install llama.cpp Python bindings</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Install build dependencies</h3>
+          <pre><code>sudo apt update && sudo apt install -y \
+  cmake build-essential libopenblas-dev python3-pip
+
+# Install llama-cpp-python with OpenBLAS acceleration
+CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS" \
+pip install llama-cpp-python --no-binary llama-cpp-python</code></pre>
+          <p>This takes ~15 minutes to compile on the Pi. OpenBLAS gives a significant speed boost over the default build.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Download Phi-3 Mini model</h3>
+          <pre><code># Install huggingface_hub downloader
+pip install huggingface_hub
+
+# Download Phi-3 Mini 4K Q4_K_M (~2.3GB)
+python3 -c "
+from huggingface_hub import hf_hub_download
+hf_hub_download(
+    repo_id='microsoft/Phi-3-mini-4k-instruct-gguf',
+    filename='Phi-3-mini-4k-instruct-q4.gguf',
+    local_dir='/home/pi/models'
+)
+print('Model downloaded to /home/pi/models/')
+"</code></pre>
+          <p>Requires internet connection on first run. ~2.3GB download — use WiFi not mobile data.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Test the model</h3>
+          <pre><code>python3 - &lt;&lt;'EOF'
+from llama_cpp import Llama
+
+llm = Llama(
+    model_path="/home/pi/models/Phi-3-mini-4k-instruct-q4.gguf",
+    n_ctx=2048,       # context window
+    n_threads=4,      # use all 4 Pi 5 cores
+    verbose=False
+)
+
+response = llm.create_chat_completion(messages=[
+    {"role": "system", "content": "You are a friendly robot assistant named HUMN."},
+    {"role": "user",   "content": "Hello! What can you do?"}
+])
+print(response["choices"][0]["message"]["content"])
+EOF</code></pre>
+          <p>First response takes ~30s to load the model into RAM. Subsequent responses are 5–15 tokens/sec.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Step 2 — Install Whisper (Speech-to-Text)</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Install OpenAI Whisper</h3>
+          <pre><code>pip install openai-whisper
+# Also install audio capture library
+pip install pyaudio sounddevice numpy</code></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Download Whisper tiny model (~39MB)</h3>
+          <pre><code>python3 -c "import whisper; whisper.load_model('tiny')"
+# Downloads to ~/.cache/whisper/ automatically</code></pre>
+          <p>Use <code>tiny</code> for fastest response (~2s), <code>base</code> (~74MB) for better accuracy.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Test microphone capture</h3>
+          <pre><code>python3 - &lt;&lt;'EOF'
+import whisper
+import sounddevice as sd
+import numpy as np
+
+model = whisper.load_model("tiny")
+
+print("Speak now (3 seconds)...")
+audio = sd.rec(int(3 * 16000), samplerate=16000, channels=1, dtype='float32')
+sd.wait()
+audio = audio.flatten()
+
+result = model.transcribe(audio, fp16=False)
+print("You said:", result["text"])
+EOF</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <h2>Step 3 — Text-to-Speech (pyttsx3)</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Install pyttsx3</h3>
+          <pre><code>pip install pyttsx3
+sudo apt install -y espeak espeak-data</code></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Test speech output</h3>
+          <pre><code>python3 - &lt;&lt;'EOF'
+import pyttsx3
+
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)   # words per minute
+engine.setProperty('volume', 0.9)
+engine.say("Hello, I am HUMN. How can I help you?")
+engine.runAndWait()
+EOF</code></pre>
+          <p>Voice plays through the MAX98357A amp to the chest speaker.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Step 4 — Full Voice Loop</h2>
+    <p>Save this as <code>/home/pi/robot/voice_loop.py</code> — the complete listen → think → speak pipeline:</p>
+    <div class="step">
+      <div class="step-num">▶</div>
+      <div class="step-body">
+        <pre><code>"""
+voice_loop.py — HUMN Robot voice conversation loop
+Listens via SPH0645 mics → transcribes with Whisper
+→ reasons with Phi-3 Mini → speaks with pyttsx3
+"""
+import whisper
+import sounddevice as sd
+import numpy as np
+import pyttsx3
+from llama_cpp import Llama
+
+MODEL_PATH  = "/home/pi/models/Phi-3-mini-4k-instruct-q4.gguf"
+SAMPLE_RATE = 16000
+RECORD_SECS = 4   # seconds to listen per turn
+
+SYSTEM_PROMPT = """You are HUMN, a friendly humanoid robot assistant
+built by Humanising Technologies. Keep responses short (1-3 sentences).
+If asked to move, describe the movement you would make."""
+
+# --- Load models (once at startup) ---
+print("Loading Whisper...")
+stt = whisper.load_model("tiny")
+
+print("Loading Phi-3 Mini...")
+llm = Llama(
+    model_path=MODEL_PATH,
+    n_ctx=2048,
+    n_threads=4,
+    verbose=False
+)
+
+print("Initialising TTS...")
+tts = pyttsx3.init()
+tts.setProperty('rate', 150)
+
+history = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+def listen():
+    """Record audio and transcribe to text."""
+    print("Listening...")
+    audio = sd.rec(
+        int(RECORD_SECS * SAMPLE_RATE),
+        samplerate=SAMPLE_RATE,
+        channels=1,
+        dtype='float32'
+    )
+    sd.wait()
+    result = stt.transcribe(audio.flatten(), fp16=False)
+    text = result["text"].strip()
+    print(f"Heard: {text}")
+    return text
+
+def think(user_text):
+    """Send text to Phi-3 and get a response."""
+    history.append({"role": "user", "content": user_text})
+    response = llm.create_chat_completion(
+        messages=history,
+        max_tokens=150,
+        temperature=0.7
+    )
+    reply = response["choices"][0]["message"]["content"].strip()
+    history.append({"role": "assistant", "content": reply})
+    print(f"HUMN: {reply}")
+    return reply
+
+def speak(text):
+    """Speak text through chest speaker."""
+    tts.say(text)
+    tts.runAndWait()
+
+# --- Main loop ---
+speak("Hello, I am HUMN. I am ready.")
+while True:
+    try:
+        user_input = listen()
+        if not user_input or len(user_input) &lt; 2:
+            continue
+        if any(w in user_input.lower() for w in ["goodbye", "bye", "shutdown"]):
+            speak("Goodbye!")
+            break
+        reply = think(user_input)
+        speak(reply)
+    except KeyboardInterrupt:
+        break</code></pre>
+        <p>Run with: <code>python3 /home/pi/robot/voice_loop.py</code></p>
+      </div>
+    </div>
+
+    <h2>Step 5 — Auto-start on Boot</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Create a systemd service</h3>
+          <pre><code>sudo nano /etc/systemd/system/humn-robot.service</code></pre>
+          <pre><code>[Unit]
+Description=HUMN Robot Voice Loop
+After=network.target sound.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/robot/voice_loop.py
+WorkingDirectory=/home/pi/robot
+Restart=on-failure
+User=pi
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+          <pre><code>sudo systemctl enable humn-robot
+sudo systemctl start humn-robot
+sudo journalctl -u humn-robot -f   # watch logs</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <strong>RAM budget on Pi 5 8GB:</strong> Phi-3 Mini Q4 uses ~3.5GB RAM, Whisper tiny uses ~400MB, OS overhead ~600MB. Total ~4.5GB — well within the 8GB limit with room for servo control threads.
+    </div>
+
+    <h2>Optional Upgrades</h2>
+    <table>
+      <tr><th>Component</th><th>What it adds</th><th>Extra RAM</th></tr>
+      <tr><td>Whisper <code>base</code> model</td><td>Better transcription accuracy</td><td>+200MB</td></tr>
+      <tr><td>Phi-3 Mini 128K context</td><td>Longer conversation memory</td><td>same</td></tr>
+      <tr><td>Wake word (Porcupine)</td><td>"Hey HUMN" trigger instead of push-to-talk</td><td>minimal</td></tr>
+      <tr><td>OpenCV face detection</td><td>Robot looks at who is speaking</td><td>+300MB</td></tr>
+      <tr><td>llama 3.2 3B Q4</td><td>Alternative model, slightly better reasoning</td><td>same</td></tr>
+    </table>
+  </div>
+
   <!-- BOM ──────────────────────────────────────────────────────────────── -->
   <div class="page" id="page-bom">
     <h1>Bill of Materials</h1>
@@ -3262,35 +3595,39 @@ print("Gyro:", gyro)</code></pre>
     <h2>Purchased Parts</h2>
     <table>
       <tr><th>Item</th><th>Qty</th><th>Unit</th><th>Total</th><th>Source</th></tr>
-      <tr><td>DS3225 Servo</td><td>8</td><td>$17</td><td>$136</td><td><a href="https://www.aliexpress.com/w/wholesale-DS3225-servo.html" target="_blank">AliExpress</a></td></tr>
-      <tr><td>MG996R Servo</td><td>6</td><td>$10</td><td>$60</td><td><a href="https://www.aliexpress.com/w/wholesale-MG996R-servo.html" target="_blank">AliExpress</a></td></tr>
-      <tr><td>SG90 Micro Servo</td><td>4</td><td>$4</td><td>$16</td><td><a href="https://www.aliexpress.com/w/wholesale-SG90-servo.html" target="_blank">AliExpress</a></td></tr>
-      <tr><td>Raspberry Pi 5 Starter Kit (8GB) <small style="color:#aaa">incl. case, PSU, 64GB SD, cables</small></td><td>1</td><td>$320</td><td>$320</td><td><a href="https://core-electronics.com.au/raspberry-pi-5-8gb-starter-bundle.html" target="_blank">Core Electronics</a></td></tr>
-      <tr><td>PCA9685 PWM Board (Adafruit)</td><td>2</td><td>$27.50</td><td>$55</td><td><a href="https://core-electronics.com.au/adafruit-16-channel-12-bit-pwm-servo-driver-i2c-interface-pca9685.html" target="_blank">Core Electronics</a></td></tr>
-      <tr><td>MPU-6050 IMU</td><td>1</td><td>$4.55</td><td>$4.55</td><td><a href="https://core-electronics.com.au/mpu-6050-module-3-axis-gyroscope-acce-lerometer.html" target="_blank">Core Electronics</a></td></tr>
+      <tr><td>DS3225MG 180° Servo (Dsservo)</td><td>8</td><td>$22.19</td><td>$177.52</td><td><a href="https://www.aliexpress.com/w/wholesale-DS3225-servo.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>MG996R 180° Servo</td><td>6</td><td>$6.12</td><td>$36.72</td><td><a href="https://www.aliexpress.com/item/1005007208312977.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>MG90S Micro Servo 180°</td><td>5</td><td>$3.52</td><td>$17.59</td><td><a href="https://www.aliexpress.com/item/1005008315780030.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>Raspberry Pi 5 Starter Kit (8GB) <small style="color:#aaa">incl. case, PSU, 64GB SD, cables</small></td><td>1</td><td>$319.65</td><td>$319.65</td><td><a href="https://core-electronics.com.au/raspberry-pi-5-8gb-starter-bundle.html" target="_blank">Core Electronics</a></td></tr>
+      <tr><td>PCA9685 PWM Board (Adafruit)</td><td>2</td><td>$26.80</td><td>$53.60</td><td><a href="https://core-electronics.com.au/adafruit-16-channel-12-bit-pwm-servo-driver-i2c-interface-pca9685.html" target="_blank">Core Electronics</a></td></tr>
+      <tr><td>MPU-6050 IMU</td><td>1</td><td>$4.60</td><td>$4.60</td><td><a href="https://core-electronics.com.au/mpu-6050-module-3-axis-gyroscope-acce-lerometer.html" target="_blank">Core Electronics</a></td></tr>
       <tr><td>Logic Level Converter</td><td>1</td><td>$2.95</td><td>$2.95</td><td><a href="https://core-electronics.com.au/logic-level-converter-bidirectional.html" target="_blank">Core Electronics</a></td></tr>
-      <tr><td>Power Distribution Board</td><td>1</td><td>$21</td><td>$21</td><td><a href="https://www.hobbyking.com/en_us/power-distribution-boards.html" target="_blank">HobbyKing AU</a></td></tr>
-      <tr><td>3S LiPo 5000mAh</td><td>1</td><td>$50</td><td>$50</td><td><a href="https://www.hobbyking.com/en_us/lipo-batteries.html" target="_blank">HobbyKing AU</a></td></tr>
-      <tr><td>LiPo Balance Charger</td><td>1</td><td>$56</td><td>$56</td><td><a href="https://www.hobbyking.com/en_us/chargers.html" target="_blank">HobbyKing AU</a></td></tr>
-      <tr><td>Step-down Regulator (BEC)</td><td>2</td><td>$14</td><td>$28</td><td><a href="https://www.hobbyking.com/en_us/bec-sbec.html" target="_blank">HobbyKing AU</a></td></tr>
-      <tr><td>XT60 + wiring kit</td><td>1</td><td>$17</td><td>$17</td><td><a href="https://www.jaycar.com.au" target="_blank">Jaycar</a></td></tr>
+      <tr><td>Matek PDB-XT60 w/ BEC 5V+12V</td><td>1</td><td>$31.99</td><td>$31.99</td><td><a href="https://dronesxpress.com.au/products/matek-systems-pdb-xt60-w-bec-5v-12v-2oz-copper-pdb" target="_blank">DronesXpress</a></td></tr>
+      <tr><td>Turnigy 3S 5000mAh 25C LiPo (XT90)</td><td>1</td><td>$45</td><td>$45</td><td><a href="https://hobbyking.com/turnigy-battery-5000mah-3s-25c-lipo-pack-xt-90.html" target="_blank">HobbyKing AU</a></td></tr>
+      <tr><td>ISDT 608AC LiPo Charger (AC/DC 8A)</td><td>1</td><td>$70</td><td>$70</td><td><a href="https://rcbox.com.au/products/isdt-608ac-ac-60w-dc-200w-8a-battgo-smart-battery-charger-discharger" target="_blank">RC Box AU</a></td></tr>
+      <tr><td>Hobbywing UBEC 5V/6V 3A</td><td>2</td><td>$23.99</td><td>$47.98</td><td><a href="https://dronesxpress.com.au/products/5v-6v-hobbywing-rc-ubec-3a-max-5a-esc" target="_blank">DronesXpress</a></td></tr>
+      <tr><td>XT90F → XT60M adapter</td><td>1</td><td>$4.69</td><td>$4.69</td><td><a href="https://www.aliexpress.com/item/1005006744636234.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>Servo extension cables 300mm (10pk)</td><td>1</td><td>$13.49</td><td>$13.49</td><td><a href="https://www.aliexpress.com/item/1005006251281158.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>22AWG silicone wire 5-colour 10m</td><td>1</td><td>$15.68</td><td>$15.68</td><td><a href="https://www.aliexpress.com/w/wholesale-22awg-silicone-wire.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>JST PH 2.0 pre-crimped connector kit</td><td>1</td><td>$22.19</td><td>$22.19</td><td><a href="https://www.aliexpress.com/w/wholesale-jst-ph-2.0-connector.html" target="_blank">AliExpress</a></td></tr>
       <!-- 64GB microSD included in Pi 5 Starter Kit -->
-      <tr><td>M3 Heat-set inserts (100pk)</td><td>1</td><td>$11</td><td>$11</td><td><a href="https://www.aliexpress.com/w/wholesale-M3-heat-set-inserts.html" target="_blank">AliExpress</a></td></tr>
-      <tr><td>M3 bolts assorted (200pk)</td><td>1</td><td>$14</td><td>$14</td><td><a href="https://www.jaycar.com.au" target="_blank">Jaycar</a></td></tr>
-      <tr><td>M2 bolts (50pk)</td><td>1</td><td>$8</td><td>$8</td><td><a href="https://www.jaycar.com.au" target="_blank">Jaycar</a></td></tr>
-      <tr><td>Ball bearings MR83ZZ (20pk)</td><td>1</td><td>$14</td><td>$14</td><td><a href="https://www.aliexpress.com/w/wholesale-MR83ZZ-bearing.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>M3 Heat-set inserts M3×5×4 (100pk)</td><td>1</td><td>$5.93</td><td>$5.93</td><td><a href="https://www.aliexpress.com/item/1005002897983868.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>M3 bolts assorted</td><td>1</td><td>$14</td><td>$14</td><td><a href="https://www.bunnings.com.au" target="_blank">Bunnings</a></td></tr>
+      <tr><td>M2 bolts (50pk)</td><td>1</td><td>$8</td><td>$8</td><td><a href="https://www.bunnings.com.au" target="_blank">Bunnings</a></td></tr>
+      <tr><td>Ball bearings MR83ZZ 3×8×3mm (10pk)</td><td>1</td><td>$9.49</td><td>$9.49</td><td><a href="https://www.aliexpress.com/item/1005004327403322.html" target="_blank">AliExpress</a></td></tr>
+      <tr><td>LiPo fireproof safety bag (23×30cm)</td><td>1</td><td>$26.99</td><td>$26.99</td><td><a href="https://dronesxpress.com.au/products/1pcs-fireproof-rc-lipo-li-po-battery-safe-bag-accessories" target="_blank">DronesXpress</a></td></tr>
       <tr><td>PETG Filament 1kg</td><td>3</td><td>$35</td><td>$105</td><td><a href="https://au.store.bambulab.com/collections/filament" target="_blank">Bambu Lab AU</a></td></tr>
       <tr><td>TPU Filament 0.5kg</td><td>1</td><td>$35</td><td>$35</td><td><a href="https://au.store.bambulab.com/collections/filament" target="_blank">Bambu Lab AU</a></td></tr>
-      <tr><td>40mm 3W 8Ω Speaker</td><td>1</td><td>$8</td><td>$8</td><td><a href="https://www.jaycar.com.au" target="_blank">Jaycar</a></td></tr>
+      <tr><td>Speaker 40mm 4Ω 5W (round)</td><td>1</td><td>$5.80</td><td>$5.80</td><td><a href="https://core-electronics.com.au/makerverse-enclosed-speaker-8-ohm-5-watt.html" target="_blank">Core Electronics</a></td></tr>
       <tr><td>MAX98357A I²S Amplifier (Adafruit)</td><td>1</td><td>$12.51</td><td>$12.51</td><td><a href="https://littlebirdelectronics.com.au/products/adafruit-i2s-3w-class-d-amplifier-breakout-max98357a" target="_blank">Little Bird Electronics</a></td></tr>
-      <tr><td>SPH0645 I²S MEMS Microphone (Adafruit)</td><td>2</td><td>$12.95</td><td>$25.90</td><td><a href="https://www.pakronics.com.au/products/adafruit-i2s-mems-microphone-breakout-sph0645lm4h-ada3421" target="_blank">Pakronics</a></td></tr>
+      <tr><td>SPH0645LM4H I²S MEMS Microphone (Adafruit)</td><td>2</td><td>$14.25</td><td>$28.49</td><td><a href="https://www.pakronics.com.au/products/adafruit-i2s-mems-microphone-breakout-sph0645lm4h-ada3421" target="_blank">Pakronics</a></td></tr>
     </table>
 
     <div class="cost-total">
       <div>
         <div style="font-size:13px;color:#aaa;">Total (excl. printer &amp; tools)</div>
-        <div class="amount">~$957 AUD</div>
-        <div class="note">Add ~$990 for <a href="https://au.store.bambulab.com/products/p1s" target="_blank" style="color:#e87">Bambu Lab P1S</a> printer → <strong>~$1,947 total</strong></div>
+        <div class="amount">~$1,123 AUD</div>
+        <div class="note">Add ~$990 for <a href="https://au.store.bambulab.com/products/p1s" target="_blank" style="color:#e87">Bambu Lab P1S</a> printer → <strong>~$2,113 total</strong></div>
       </div>
       <div style="font-size:40px">🧾</div>
     </div>
