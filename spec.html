@@ -2884,7 +2884,7 @@
   <!-- AUDIO ───────────────────────────────────────────────────────────── -->
   <div class="page" id="page-audio">
     <h1>Audio System</h1>
-    <p class="page-subtitle">A 40mm speaker behind the chest grille and two MEMS microphones inside the ear panels, all connected via I²S to the Raspberry Pi 5.</p>
+    <p class="page-subtitle">A 40mm 4Ω speaker behind the chest grille driven by a MAX98357A amp, and two SPH0645LM4H MEMS microphones inside the ear panels, all connected via I²S to the Raspberry Pi 5.</p>
 
     <h2>Component Placement</h2>
 
@@ -2907,7 +2907,7 @@
         <!-- Mic module inside left ear -->
         <rect x="54" y="106" width="10" height="10" rx="1" fill="#1a1a4a" stroke="#4a6888" stroke-width="1"/>
         <circle cx="59" cy="111" r="2.5" fill="#000" stroke="#444" stroke-width="0.5"/>
-        <text class="as" x="52" y="93" fill="#2244aa">INMP441</text>
+        <text class="as" x="52" y="93" fill="#2244aa">SPH0645</text>
         <text class="as" x="52" y="84" fill="#2244aa">Left Mic</text>
         <line x1="59" y1="92" x2="59" y2="106" stroke="#2244aa" stroke-width="0.8" stroke-dasharray="2,1"/>
 
@@ -2916,7 +2916,7 @@
         <!-- Mic module inside right ear -->
         <rect x="186" y="106" width="10" height="10" rx="1" fill="#1a1a4a" stroke="#4a6888" stroke-width="1"/>
         <circle cx="191" cy="111" r="2.5" fill="#000" stroke="#444" stroke-width="0.5"/>
-        <text class="as" x="198" y="93" fill="#2244aa">INMP441</text>
+        <text class="as" x="198" y="93" fill="#2244aa">SPH0645</text>
         <text class="as" x="198" y="84" fill="#2244aa">Right Mic</text>
         <line x1="191" y1="92" x2="191" y2="106" stroke="#2244aa" stroke-width="0.8" stroke-dasharray="2,1"/>
 
@@ -2986,20 +2986,20 @@
       <tr><td>LRCLK</td><td>GPIO 19 — PCM_FS (Pin 35)</td><td>Left/right clock</td></tr>
       <tr><td>GAIN</td><td>Leave floating</td><td>= +9 dB (default)</td></tr>
       <tr><td>SD</td><td>Leave floating</td><td>= left+right mixed to mono</td></tr>
-      <tr><td>Speaker+</td><td colspan="2">Red wire → speaker + terminal</td></tr>
+      <tr><td>Speaker+</td><td colspan="2">Red wire → speaker + terminal (40mm 4Ω 5W)</td></tr>
       <tr><td>Speaker−</td><td colspan="2">Black wire → speaker − terminal</td></tr>
     </table>
 
-    <h2>Microphone Wiring (INMP441 × 2 → Pi)</h2>
-    <p>Both mics share the same I²S clock lines. Left/right channel is set by the <strong>L/R</strong> pin on each module.</p>
+    <h2>Microphone Wiring (SPH0645LM4H × 2 → Pi)</h2>
+    <p>Both mics share the same I²S clock lines. Left/right channel is set by the <strong>SEL</strong> pin on each module. The SPH0645 is the Adafruit breakout — pin labels match the board silkscreen.</p>
     <table>
-      <tr><th>INMP441 Pin</th><th>Left Mic (Raspberry Pi)</th><th>Right Mic (Raspberry Pi)</th></tr>
-      <tr><td>VDD</td><td>3.3V (Pin 1)</td><td>3.3V (Pin 1)</td></tr>
+      <tr><th>SPH0645 Pin</th><th>Left Mic (Raspberry Pi)</th><th>Right Mic (Raspberry Pi)</th></tr>
+      <tr><td>3V</td><td>3.3V (Pin 1)</td><td>3.3V (Pin 1)</td></tr>
       <tr><td>GND</td><td>GND (Pin 6)</td><td>GND (Pin 6)</td></tr>
-      <tr><td>SD</td><td>GPIO 20 — PCM_DIN (Pin 38)</td><td>GPIO 20 — PCM_DIN (Pin 38) <em>shared</em></td></tr>
-      <tr><td>SCK</td><td>GPIO 18 — PCM_CLK (Pin 12)</td><td>GPIO 18 — PCM_CLK (Pin 12) <em>shared</em></td></tr>
-      <tr><td>WS</td><td>GPIO 19 — PCM_FS (Pin 35)</td><td>GPIO 19 — PCM_FS (Pin 35) <em>shared</em></td></tr>
-      <tr><td>L/R</td><td><strong>GND</strong> → left channel</td><td><strong>3.3V</strong> → right channel</td></tr>
+      <tr><td>DOUT</td><td>GPIO 20 — PCM_DIN (Pin 38)</td><td>GPIO 20 — PCM_DIN (Pin 38) <em>shared</em></td></tr>
+      <tr><td>BCLK</td><td>GPIO 18 — PCM_CLK (Pin 12)</td><td>GPIO 18 — PCM_CLK (Pin 12) <em>shared</em></td></tr>
+      <tr><td>LRCLK</td><td>GPIO 19 — PCM_FS (Pin 35)</td><td>GPIO 19 — PCM_FS (Pin 35) <em>shared</em></td></tr>
+      <tr><td>SEL</td><td><strong>GND</strong> → left channel</td><td><strong>3.3V</strong> → right channel</td></tr>
     </table>
 
     <div class="callout info">
@@ -3007,7 +3007,7 @@
     </div>
 
     <h2>Ear Panel Cutout</h2>
-    <p>Each ear panel (part of the Head Shell) requires a <strong>12 mm diameter hole</strong> centred on the inner face to seat the INMP441 module. Use a drill press or rotary tool after printing. The module snaps in and is held with a dab of hot glue.</p>
+    <p>Each ear panel (part of the Head Shell) requires a <strong>12 mm diameter hole</strong> centred on the inner face to seat the SPH0645 module. Use a drill press or rotary tool after printing. The module snaps in and is held with a dab of hot glue.</p>
 
     <h2>Software Setup</h2>
     <div class="steps">
@@ -3015,11 +3015,12 @@
         <div class="step-num">1</div>
         <div class="step-body">
           <h3>Enable I²S overlay</h3>
-          <pre><code>sudo nano /boot/config.txt
+          <pre><code>sudo nano /boot/firmware/config.txt
 # Add these lines:
 dtparam=i2s=on
-dtoverlay=googlevoicehat-soundcard</code></pre>
-          <p>Reboot after saving. The <code>googlevoicehat-soundcard</code> overlay works with both the MAX98357A and INMP441.</p>
+dtoverlay=i2s-mmap
+dtoverlay=hifiberry-dac</code></pre>
+          <p>Reboot after saving. The <code>hifiberry-dac</code> overlay enables the MAX98357A amplifier output. The <code>i2s-mmap</code> overlay enables microphone input from the SPH0645. Note: on Raspberry Pi OS Bookworm the config file is at <code>/boot/firmware/config.txt</code>, not <code>/boot/config.txt</code>.</p>
         </div>
       </div>
       <div class="step">
@@ -3074,9 +3075,10 @@ pip3 install openai-whisper</code></pre>
         <text class="pb" x="65" y="97" font-weight="700">3S LiPo</text>
         <text class="ps" x="65" y="113">11.1V nominal</text>
         <text class="ps" x="65" y="126">5000mAh</text>
-        <!-- XT60 -->
+        <!-- XT90→XT60 adapter -->
         <rect x="120" y="93" width="44" height="24" rx="4" fill="#eee" stroke="#888" stroke-width="1.2"/>
-        <text class="ps" x="142" y="105">XT60</text>
+        <text class="ps" x="142" y="102">XT90→</text>
+        <text class="ps" x="142" y="112">XT60</text>
         <line x1="120" y1="105" x2="120" y2="105" stroke="#555"/>
         <!-- Distribution -->
         <rect x="164" y="75" width="80" height="60" rx="6" fill="#f5f5f5" stroke="#888" stroke-width="1.5"/>
