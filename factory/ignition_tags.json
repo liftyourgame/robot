@@ -1,0 +1,115 @@
+{
+  "tags": [
+    {
+      "name": "Factory",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "name": "Printer",
+          "tagType": "Folder",
+          "tags": [
+            {
+              "name": "bed_temp",
+              "tagType": "AtomicTag",
+              "dataType": "Float4",
+              "historyEnabled": true,
+              "historicalDeadband": 0.5,
+              "historicalDeadbandMode": "Absolute",
+              "tooltip": "Bed temperature (°C)"
+            },
+            {
+              "name": "nozzle_temp",
+              "tagType": "AtomicTag",
+              "dataType": "Float4",
+              "historyEnabled": true,
+              "historicalDeadband": 0.5,
+              "historicalDeadbandMode": "Absolute",
+              "tooltip": "Nozzle temperature (°C)"
+            },
+            {
+              "name": "nozzle_target",
+              "tagType": "AtomicTag",
+              "dataType": "Float4",
+              "historyEnabled": false,
+              "tooltip": "Nozzle target temperature (°C)"
+            },
+            {
+              "name": "chamber_temp",
+              "tagType": "AtomicTag",
+              "dataType": "Float4",
+              "historyEnabled": true,
+              "historicalDeadband": 0.5,
+              "historicalDeadbandMode": "Absolute",
+              "tooltip": "Chamber temperature (°C)"
+            },
+            {
+              "name": "fan_speed_pct",
+              "tagType": "AtomicTag",
+              "dataType": "Int2",
+              "historyEnabled": false,
+              "tooltip": "Cooling fan speed 0-100 %"
+            },
+            {
+              "name": "print_percent",
+              "tagType": "AtomicTag",
+              "dataType": "Int2",
+              "historyEnabled": true,
+              "historicalDeadband": 1,
+              "historicalDeadbandMode": "Absolute",
+              "tooltip": "Print completion 0-100 %"
+            },
+            {
+              "name": "layer_num",
+              "tagType": "AtomicTag",
+              "dataType": "Int4",
+              "historyEnabled": false,
+              "tooltip": "Current layer number"
+            },
+            {
+              "name": "total_layer_num",
+              "tagType": "AtomicTag",
+              "dataType": "Int4",
+              "historyEnabled": false,
+              "tooltip": "Total layer count for this print"
+            },
+            {
+              "name": "remaining_minutes",
+              "tagType": "AtomicTag",
+              "dataType": "Int4",
+              "historyEnabled": false,
+              "tooltip": "Estimated minutes remaining"
+            },
+            {
+              "name": "gcode_state",
+              "tagType": "AtomicTag",
+              "dataType": "String",
+              "historyEnabled": true,
+              "tooltip": "IDLE / PREPARE / RUNNING / PAUSE / FINISH / FAILED"
+            },
+            {
+              "name": "subtask_name",
+              "tagType": "AtomicTag",
+              "dataType": "String",
+              "historyEnabled": false,
+              "tooltip": "Current print file name"
+            },
+            {
+              "name": "wifi_signal",
+              "tagType": "AtomicTag",
+              "dataType": "Int2",
+              "historyEnabled": false,
+              "tooltip": "WiFi signal strength dBm"
+            },
+            {
+              "name": "last_updated",
+              "tagType": "AtomicTag",
+              "dataType": "String",
+              "historyEnabled": false,
+              "tooltip": "ISO timestamp of last MQTT message"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
