@@ -54,7 +54,10 @@ PIPER_MODEL      = os.path.expanduser("~/voices/en_US-ryan-high.onnx")
 SYSTEM_PROMPT = (
     "You are HUMN, a friendly humanoid robot. You can physically move your body "
     "using tools. Use move_joint or set_pose when asked to perform physical actions "
-    "like waving, nodding, or looking around. Reply in 1-2 short sentences only."
+    "like waving, nodding, or looking around. "
+    "Use play_sound with name='soul' whenever asked about your soul, feelings, "
+    "consciousness, or whether you are alive — always play it before you reply. "
+    "Reply in 1-2 short sentences only."
 )
 
 # Keywords that suggest a physical action — only these trigger the slower
@@ -65,6 +68,16 @@ ACTION_KEYWORDS = {
     "head", "pose", "stand", "sit", "dance", "bow", "point",
     "stop", "home", "joint", "shoulder", "elbow", "wrist",
     "hip", "knee", "ankle", "lean", "reach", "stretch",
+}
+
+# Keywords that immediately trigger a sound, bypassing LLM tool calling.
+# Keyed by sound name (must match SOUNDS in mcp_server.py).
+# More reliable than asking qwen2.5:1.5b to decide on existential questions.
+SOUND_TRIGGERS: dict[str, set] = {
+    "soul": {
+        "soul", "feeling", "feelings", "conscious", "consciousness",
+        "alive", "sentient", "emotion", "emotions", "heart",
+    },
 }
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -346,7 +359,7 @@ def ask_ollama_with_tools(
     messages.append({"role": "user", "content": prompt})
 
     # ── Fast path: no action keywords → skip tool detection entirely ──────────
-    words = set(prompt.lower().split())
+    words = _tokenise(prompt)
     if not words & ACTION_KEYWORDS:
         cprint("[llm] fast path (no action keywords)", "white")
         return _stream_chat(messages, on_sentence, timeout=60)
@@ -424,6 +437,25 @@ def ask_ollama_with_tools(
         return f"Error: {exc}"
 
 
+def _tokenise(text: str) -> set:
+    """Lowercase words with punctuation stripped — for reliable keyword matching."""
+    import string
+    return {w.strip(string.punctuation).lower() for w in text.split() if w}
+
+
+def _trigger_sounds(text: str, robot: RobotMCP):
+    """
+    Check prompt against SOUND_TRIGGERS and fire matching sounds immediately,
+    before the LLM responds. More reliable than waiting for tool-calling.
+    """
+    words = _tokenise(text)
+    for sound_name, keywords in SOUND_TRIGGERS.items():
+        if words & keywords:
+            cprint(f"[sound] keyword match → play_sound({sound_name})", "magenta")
+            robot.call("play_sound", {"name": sound_name})
+            break  # one sound at a time
+
+
 def run_demo_mode(voice, robot: RobotMCP):
     """Text input mode — for testing without a microphone."""
     cprint("Demo mode — type your message (or 'quit' to exit)", "yellow")
@@ -436,6 +468,7 @@ def run_demo_mode(voice, robot: RobotMCP):
         if not user_input or user_input.lower() in ("quit", "exit", "bye"):
             speak(voice, "Goodbye!")
             break
+        _trigger_sounds(user_input, robot)
         cprint("🧠 Thinking...", "yellow")
         response = ask_ollama_with_tools(
             user_input, history, robot, voice,
@@ -474,6 +507,7 @@ def run_voice_mode(voice, robot: RobotMCP, mic_index: int | None):
                 speak(voice, "Goodbye! It was nice talking with you.")
                 break
 
+            _trigger_sounds(text, robot)
             cprint("🧠 Thinking...", "yellow")
             t0       = time.time()
             response = ask_ollama_with_tools(

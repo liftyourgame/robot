@@ -99,6 +99,11 @@ POSES = {
     "look_down":  {"head_tilt": 120},
     "nod": None,  # handled specially in set_pose
 }
+# ── Sound library ─────────────────────────────────────────────────────────────
+# Maps sound name → absolute path on the Pi.
+SOUNDS = {
+    "soul": "/home/greg/music/soul.wav",
+}
 # ──────────────────────────────────────────────────────────────────────────────
 
 # MCP tool definitions in Ollama/OpenAI tool format
@@ -163,6 +168,26 @@ MCP_TOOLS = [
             "name": "stop_all",
             "description": "Safely stop all movement — centres all servos to home position.",
             "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "play_sound",
+            "description": (
+                "Play a named sound effect or music file through the robot's speaker. "
+                "Use 'soul' when asked about having a soul, feelings, or consciousness."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": f"Sound name. One of: {', '.join(SOUNDS.keys())}",
+                    },
+                },
+                "required": ["name"],
+            },
         },
     },
 ]
@@ -288,6 +313,23 @@ class RobotMCP:
             self.move_joint(joint, JOINTS[joint][4])
         return {"status": "ok", "message": "All joints returned to home position"}
 
+    def play_sound(self, name: str) -> dict:
+        """Play a named sound file via aplay (non-blocking)."""
+        if name not in SOUNDS:
+            return {"error": f"Unknown sound '{name}'. Available: {', '.join(SOUNDS.keys())}"}
+        path = SOUNDS[name]
+        cprint(f"[mcp] play_sound: {name} ({path})", "cyan")
+        try:
+            # Non-blocking — robot can keep talking while music plays
+            subprocess.Popen(
+                ["aplay", "-D", "plughw:0,0", "-q", path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return {"sound": name, "status": "playing"}
+        except Exception as exc:
+            return {"error": str(exc)}
+
     # ── Tool dispatcher ───────────────────────────────────────────────────────
 
     def call(self, tool_name: str, arguments: dict) -> str:
@@ -301,6 +343,7 @@ class RobotMCP:
             "read_imu":   lambda: self.read_imu(),
             "get_joints": lambda: self.get_joints(),
             "stop_all":   lambda: self.stop_all(),
+            "play_sound": lambda: self.play_sound(arguments.get("name", "")),
         }
         fn = dispatch.get(tool_name)
         if fn is None:
