@@ -3,11 +3,17 @@
 pi/voice_loop.py
 
 HUMN Robot — Voice interaction loop.
-Pipeline: microphone → Whisper STT → Ollama/Phi-3 → pyttsx3 TTS → speaker
+Pipeline: microphone → Whisper STT → Ollama/Phi-3 → Piper TTS → speaker
 
 Requirements (on Pi):
-    pip install openai-whisper pyttsx3 pyaudio requests termcolor
-    sudo apt install espeak espeak-ng portaudio19-dev
+    pip install openai-whisper piper-tts pathvalidate pyaudio requests termcolor
+    sudo apt install portaudio19-dev
+
+Voice model setup (run once):
+    mkdir -p ~/voices
+    cd ~/voices
+    wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx
+    wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json
 
 Usage:
     python3 voice_loop.py              # uses default mic
@@ -17,6 +23,7 @@ Usage:
 """
 
 import argparse
+import io
 import json
 import os
 import subprocess
@@ -31,12 +38,11 @@ OLLAMA_URL       = "http://localhost:11434/api/generate"
 OLLAMA_MODEL     = "qwen2:0.5b"
 # 💡 Faster alternative: "qwen2:0.5b" (~400MB, ~4x faster, slightly less capable)
 # Switch with: ollama pull qwen2:0.5b  then change OLLAMA_MODEL above
-WHISPER_MODEL    = "tiny"       # tiny/base/small — tiny is fastest on Pi
-RECORD_SECONDS   = 5            # how long to listen each turn
-SAMPLE_RATE      = 16000        # Hz — Whisper expects 16kHz
-SILENCE_THRESH   = 500          # RMS below this = silence (skip transcription)
-TTS_RATE         = 175          # words per minute for espeak
-TTS_VOICE        = "en"         # espeak voice
+WHISPER_MODEL    = "tiny"        # tiny/base/small — tiny is fastest on Pi
+RECORD_SECONDS   = 5             # how long to listen each turn
+SAMPLE_RATE      = 16000         # Hz — Whisper expects 16kHz
+SILENCE_THRESH   = 500           # RMS below this = silence (skip transcription)
+PIPER_MODEL      = os.path.expanduser("~/voices/en_US-ryan-high.onnx")
 
 #SYSTEM_PROMPT = "You are HUMN, a friendly robot that can sing and dance. Reply in 1-2 short sentences only."
 SYSTEM_PROMPT = "You are HUMN, a friendly robot that can sing and dance."
@@ -52,10 +58,11 @@ except ImportError:
 def install_deps():
     """Install required packages if missing."""
     deps = {
-        "whisper":  "openai-whisper",
-        "pyttsx3":  "pyttsx3",
-        "pyaudio":  "pyaudio",
-        "requests": "requests",
+        "whisper":      "openai-whisper",
+        "pyaudio":      "pyaudio",
+        "requests":     "requests",
+        "piper":        "piper-tts",
+        "pathvalidate": "pathvalidate",
     }
     for module, pkg in deps.items():
         try:
@@ -67,24 +74,28 @@ def install_deps():
 
 
 def init_tts():
-    """Initialise pyttsx3 TTS engine."""
-    import pyttsx3
-    engine = pyttsx3.init()
-    engine.setProperty("rate", TTS_RATE)
-    voices = engine.getProperty("voices")
-    # Prefer espeak English voice
-    for v in voices:
-        if "english" in v.name.lower() or v.id.endswith(TTS_VOICE):
-            engine.setProperty("voice", v.id)
-            break
-    return engine
+    """Initialise Piper TTS voice."""
+    from piper.voice import PiperVoice
+    if not os.path.exists(PIPER_MODEL):
+        cprint(f"❌ Piper model not found: {PIPER_MODEL}", "red")
+        cprint("Run the setup commands in the docstring to download it.", "yellow")
+        sys.exit(1)
+    cprint(f"[tts] Loading Piper voice: {os.path.basename(PIPER_MODEL)}", "cyan")
+    return PiperVoice.load(PIPER_MODEL)
 
 
-def speak(engine, text: str):
-    """Speak text aloud and print it."""
+_SPEAK_WAV  = "/tmp/humn_speak.wav"
+_ALSA_DEVICE = "plughw:0,0"
+
+def speak(voice, text: str):
+    """Synthesise text with Piper and play via aplay."""
     cprint(f"🤖 HUMN: {text}", "cyan", attrs=["bold"])
-    engine.say(text)
-    engine.runAndWait()
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        voice.synthesize_wav(text, wf)
+    with open(_SPEAK_WAV, "wb") as f:
+        f.write(buf.getvalue())
+    subprocess.run(["aplay", "-D", _ALSA_DEVICE, "-q", _SPEAK_WAV])
 
 
 def list_mics():
@@ -219,7 +230,7 @@ def ask_ollama_stream(prompt: str, history: list, on_sentence=None) -> str:
         return f"Error: {exc}"
 
 
-def run_demo_mode(tts_engine):
+def run_demo_mode(voice):
     """Text input mode — for testing without a microphone."""
     cprint("Demo mode — type your message (or 'quit' to exit)", "yellow")
     history = []
@@ -229,24 +240,21 @@ def run_demo_mode(tts_engine):
         except (KeyboardInterrupt, EOFError):
             break
         if not user_input or user_input.lower() in ("quit", "exit", "bye"):
-            speak(tts_engine, "Goodbye!")
+            speak(voice, "Goodbye!")
             break
         cprint("🧠 Thinking...", "yellow")
-        sentences = []
-        def on_sentence(s):
-            sentences.append(s)
-            speak(tts_engine, s)
-        response = ask_ollama_stream(user_input, history, on_sentence=on_sentence)
+        response = ask_ollama_stream(user_input, history,
+                                     on_sentence=lambda s: speak(voice, s))
         history.append({"human": user_input, "assistant": response})
 
 
-def run_voice_mode(tts_engine, mic_index: int | None):
+def run_voice_mode(voice, mic_index: int | None):
     """Main voice loop — listen → transcribe → respond → repeat."""
     cprint(f"🎤 Voice mode — listening on mic {mic_index or 'default'}", "green")
     cprint("Press Ctrl+C to stop.\n", "white")
     history = []
 
-    speak(tts_engine, "Hello! I am HUMN. How can I help you?")
+    speak(voice, "Hello! I am HUMN. How can I help you?")
 
     while True:
         try:
@@ -267,16 +275,13 @@ def run_voice_mode(tts_engine, mic_index: int | None):
             cprint(f"👤 You said: {text}", "white")
 
             if any(w in text.lower() for w in ("goodbye", "bye", "shut down", "stop")):
-                speak(tts_engine, "Goodbye! It was nice talking with you.")
+                speak(voice, "Goodbye! It was nice talking with you.")
                 break
 
             cprint("🧠 Thinking...", "yellow")
-            t0 = time.time()
-            def on_sentence(s):
-                cprint(f"🤖 {s}", "cyan")
-                tts_engine.say(s)
-                tts_engine.runAndWait()
-            response = ask_ollama_stream(text, history, on_sentence=on_sentence)
+            t0       = time.time()
+            response = ask_ollama_stream(text, history,
+                                         on_sentence=lambda s: speak(voice, s))
             cprint(f"  ({time.time()-t0:.1f}s total)", "white")
             history.append({"human": text, "assistant": response})
 
@@ -310,12 +315,12 @@ def main():
         list_mics()
         return
 
-    tts_engine = init_tts()
+    voice = init_tts()
 
     if args.demo:
-        run_demo_mode(tts_engine)
+        run_demo_mode(voice)
     else:
-        run_voice_mode(tts_engine, args.mic)
+        run_voice_mode(voice, args.mic)
 
 
 if __name__ == "__main__":
