@@ -2,11 +2,15 @@
 """
 pi/voice_loop.py
 
-HUMN Robot — Voice interaction loop.
-Pipeline: microphone → Whisper STT → Ollama/Phi-3 → Piper TTS → speaker
+HUMN Robot — Voice interaction loop with MCP tool calling.
+Pipeline: microphone → Whisper STT → Ollama (tool call) → MCP → Piper TTS → speaker
+
+The LLM can call real robot tools (move joints, strike poses, read IMU) via
+Ollama's OpenAI-compatible tool calling API.
 
 Requirements (on Pi):
     pip install openai-whisper piper-tts pathvalidate pyaudio requests termcolor
+    pip install adafruit-circuitpython-servokit mpu6050-raspberrypi
     sudo apt install portaudio19-dev
 
 Voice model setup (run once):
@@ -15,11 +19,15 @@ Voice model setup (run once):
     wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx
     wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json
 
+LLM model setup (run once — qwen2.5:3b has best tool-calling on Pi):
+    ollama pull qwen2.5:3b
+
 Usage:
     python3 voice_loop.py              # uses default mic
     python3 voice_loop.py --list-mics  # show available input devices
     python3 voice_loop.py --mic 1      # use specific mic device index
     python3 voice_loop.py --demo       # run without mic (type input instead)
+    python3 voice_loop.py --mock       # mock hardware (no physical servos/IMU needed)
 """
 
 import argparse
@@ -33,19 +41,31 @@ import time
 import wave
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
-OLLAMA_URL       = "http://localhost:11434/api/generate"
-#OLLAMA_MODEL     = "phi3:mini"
-OLLAMA_MODEL     = "qwen2:0.5b"
-# 💡 Faster alternative: "qwen2:0.5b" (~400MB, ~4x faster, slightly less capable)
-# Switch with: ollama pull qwen2:0.5b  then change OLLAMA_MODEL above
+OLLAMA_HOST      = "http://localhost:11434"
+# qwen2.5:1.5b (~900MB) — best speed/tool-calling balance on Pi
+# Upgrade to qwen2.5:3b if you need richer responses; downgrade to qwen2.5:0.5b for max speed
+OLLAMA_MODEL     = "qwen2.5:1.5b"   # requires: ollama pull qwen2.5:1.5b
 WHISPER_MODEL    = "tiny"        # tiny/base/small — tiny is fastest on Pi
 RECORD_SECONDS   = 5             # how long to listen each turn
 SAMPLE_RATE      = 16000         # Hz — Whisper expects 16kHz
 SILENCE_THRESH   = 500           # RMS below this = silence (skip transcription)
 PIPER_MODEL      = os.path.expanduser("~/voices/en_US-ryan-high.onnx")
 
-#SYSTEM_PROMPT = "You are HUMN, a friendly robot that can sing and dance. Reply in 1-2 short sentences only."
-SYSTEM_PROMPT = "You are HUMN, a friendly robot that can sing and dance."
+SYSTEM_PROMPT = (
+    "You are HUMN, a friendly humanoid robot. You can physically move your body "
+    "using tools. Use move_joint or set_pose when asked to perform physical actions "
+    "like waving, nodding, or looking around. Reply in 1-2 short sentences only."
+)
+
+# Keywords that suggest a physical action — only these trigger the slower
+# tool-detection round trip. All other messages skip it entirely.
+ACTION_KEYWORDS = {
+    "wave", "waving", "move", "moving", "look", "looking",
+    "nod", "nodding", "turn", "turning", "arm", "arms",
+    "head", "pose", "stand", "sit", "dance", "bow", "point",
+    "stop", "home", "joint", "shoulder", "elbow", "wrist",
+    "hip", "knee", "ankle", "lean", "reach", "stretch",
+}
 # ──────────────────────────────────────────────────────────────────────────────
 
 try:
@@ -53,6 +73,10 @@ try:
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "termcolor", "-q"])
     from termcolor import cprint
+
+# MCP server must be in the same directory
+sys.path.insert(0, os.path.dirname(__file__))
+from mcp_server import RobotMCP, MCP_TOOLS
 
 
 def install_deps():
@@ -160,77 +184,247 @@ def transcribe(pcm: bytes) -> str:
         os.unlink(wav_path)
 
 
-def ask_ollama_stream(prompt: str, history: list, on_sentence=None) -> str:
+def _speak_text(text: str, on_sentence):
+    """Flush a complete text string to on_sentence() sentence by sentence."""
+    if not on_sentence or not text.strip():
+        return
+    sentence_buf = ""
+    for char in text:
+        sentence_buf += char
+        if char in ".!?" and sentence_buf.strip():
+            on_sentence(sentence_buf.strip())
+            sentence_buf = ""
+    if sentence_buf.strip():
+        on_sentence(sentence_buf.strip())
+
+
+def _stream_generate(prompt: str, on_sentence, timeout: int = 60) -> str:
     """
-    Stream response from Ollama token by token.
-    Calls on_sentence(sentence) each time a complete sentence is ready
-    so TTS can start speaking immediately rather than waiting for full response.
-    Returns the full response string.
+    Fallback streaming via /api/generate (oldest Ollama endpoint, always available).
+    No tool calling — pure text generation. Used when /api/chat is unavailable.
     """
     import requests
 
-    # Short context — only last 2 exchanges to keep prompt small
-    context = SYSTEM_PROMPT + "\n\n"
-    for turn in history[-2:]:
-        context += f"Human: {turn['human']}\nHUMN: {turn['assistant']}\n\n"
-    context += f"Human: {prompt}\nHUMN:"
+    full_text    = ""
+    sentence_buf = ""
+
+    resp = requests.post(
+        f"{OLLAMA_HOST}/api/generate",
+        json={
+            "model":  OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": True,
+            "options": {
+                "num_predict": 80,
+                "num_ctx":     512,
+                "temperature": 0.7,
+            },
+        },
+        stream=True,
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+
+    for line in resp.iter_lines():
+        if not line:
+            continue
+        try:
+            chunk = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        token = chunk.get("response") or ""
+        full_text    += token
+        sentence_buf += token
+
+        if on_sentence and any(sentence_buf.rstrip().endswith(p) for p in ".!?"):
+            sentence = sentence_buf.strip()
+            if sentence:
+                on_sentence(sentence)
+            sentence_buf = ""
+
+        if chunk.get("done"):
+            break
+
+    if on_sentence and sentence_buf.strip():
+        on_sentence(sentence_buf.strip())
+
+    return full_text.strip()
+
+
+def _stream_chat(messages: list, on_sentence, timeout: int = 60) -> str:
+    """
+    Stream a reply from /api/chat (Ollama ≥ 0.1.14, no tools).
+    Falls back to /api/generate if endpoint not found.
+    """
+    import requests
+
+    full_text    = ""
+    sentence_buf = ""
 
     try:
         resp = requests.post(
-            OLLAMA_URL,
+            f"{OLLAMA_HOST}/api/chat",
             json={
-                "model":       OLLAMA_MODEL,
-                "prompt":      context,
-                "stream":      True,
+                "model":    OLLAMA_MODEL,
+                "messages": messages,
+                "stream":   True,
                 "options": {
-                    "num_predict": 80,    # max tokens — keeps responses short
-                    "num_ctx":     512,   # small context window = faster
+                    "num_predict": 80,
+                    "num_ctx":     512,
                     "temperature": 0.7,
-                }
+                },
             },
             stream=True,
-            timeout=60
+            timeout=timeout,
         )
         resp.raise_for_status()
+    except Exception as exc:
+        # Endpoint not available — fall back to /api/generate
+        cprint(f"[llm] /api/chat unavailable ({exc}), using /api/generate", "yellow")
+        prompt = "\n".join(
+            f"{m['role'].upper()}: {m.get('content','')}" for m in messages
+        )
+        return _stream_generate(prompt, on_sentence, timeout)
 
-        full_response = ""
-        sentence_buf  = ""
+    for line in resp.iter_lines():
+        if not line:
+            continue
+        try:
+            chunk = json.loads(line)
+        except json.JSONDecodeError:
+            continue
 
-        for line in resp.iter_lines():
-            if not line:
-                continue
-            try:
-                chunk = json.loads(line)
-            except json.JSONDecodeError:
-                continue
+        token = chunk.get("message", {}).get("content") or ""
+        full_text    += token
+        sentence_buf += token
 
-            token = chunk.get("response", "")
-            full_response += token
-            sentence_buf  += token
+        if on_sentence and any(sentence_buf.rstrip().endswith(p) for p in ".!?"):
+            sentence = sentence_buf.strip()
+            if sentence:
+                on_sentence(sentence)
+            sentence_buf = ""
 
-            # Speak each sentence as it completes
-            if on_sentence and any(sentence_buf.rstrip().endswith(p) for p in ".!?"):
-                sentence = sentence_buf.strip()
-                if sentence:
-                    on_sentence(sentence)
-                sentence_buf = ""
+        if chunk.get("done"):
+            break
 
-            if chunk.get("done"):
-                break
+    if on_sentence and sentence_buf.strip():
+        on_sentence(sentence_buf.strip())
 
-        # Speak any remaining text
-        if on_sentence and sentence_buf.strip():
-            on_sentence(sentence_buf.strip())
+    return full_text.strip()
 
-        return full_response.strip()
+
+def ask_ollama_with_tools(
+    prompt: str,
+    history: list,
+    robot: RobotMCP,
+    voice,
+    on_sentence=None,
+) -> str:
+    """
+    Ollama tool-calling loop using /api/chat (Ollama ≥ 0.3.0).
+
+    Automatic degradation:
+      - Ollama ≥ 0.3.0  → /api/chat with tools (full MCP)
+      - Ollama ≥ 0.1.14 → /api/chat streaming (no tools)
+      - Any version      → /api/generate streaming (no tools)
+
+    Speed optimisation:
+      Tool detection (Round 1) is only triggered when the prompt contains an
+      ACTION_KEYWORD. All other messages go straight to streaming, cutting
+      latency to a single fast pass with a small context window.
+    """
+    import requests
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    # Last 1 exchange only — keeps context small and inference fast on Pi
+    for turn in history[-1:]:
+        messages.append({"role": "user",      "content": turn["human"]})
+        messages.append({"role": "assistant", "content": turn["assistant"]})
+
+    messages.append({"role": "user", "content": prompt})
+
+    # ── Fast path: no action keywords → skip tool detection entirely ──────────
+    words = set(prompt.lower().split())
+    if not words & ACTION_KEYWORDS:
+        cprint("[llm] fast path (no action keywords)", "white")
+        return _stream_chat(messages, on_sentence, timeout=60)
+
+    try:
+        # ── Round 1: tool-detection (non-streaming, tight token budget) ───────
+        cprint("[llm] action detected — checking for tool call", "magenta")
+        resp = requests.post(
+            f"{OLLAMA_HOST}/api/chat",
+            json={
+                "model":    OLLAMA_MODEL,
+                "messages": messages,
+                "tools":    MCP_TOOLS,
+                "stream":   False,
+                "options": {
+                    "num_predict": 128,
+                    "num_ctx":     768,
+                    "temperature": 0.7,
+                },
+            },
+            timeout=90,
+        )
+
+        # ── Graceful degradation if /api/chat not available ───────────────────
+        if resp.status_code == 404:
+            # Distinguish "model not found" from "endpoint not found"
+            err_body = resp.text.lower()
+            if "model" in err_body and ("not found" in err_body or "pull" in err_body):
+                cprint(f"[llm] ❌ Model '{OLLAMA_MODEL}' not found. "
+                       f"Run: ollama pull {OLLAMA_MODEL}", "red")
+                return f"I need a brain update. Please run: ollama pull {OLLAMA_MODEL}"
+            cprint("[llm] /api/chat not found — update Ollama for tool support. "
+                   "Falling back to /api/generate (no tools).", "yellow")
+            context = SYSTEM_PROMPT + "\n\n"
+            for turn in history[-1:]:
+                context += f"Human: {turn['human']}\nHUMN: {turn['assistant']}\n\n"
+            context += f"Human: {prompt}\nHUMN:"
+            return _stream_generate(context, on_sentence, timeout=60)
+
+        resp.raise_for_status()
+        message = resp.json().get("message", {})
+
+        # ── Execute tool calls if requested ───────────────────────────────────
+        tool_calls = message.get("tool_calls") or []
+        if tool_calls:
+            cprint(f"[llm] 🔧 Tool calls: {len(tool_calls)}", "magenta")
+            messages.append(message)
+
+            for tc in tool_calls:
+                fn      = tc.get("function", {})
+                fn_name = fn.get("name", "")
+                fn_args = fn.get("arguments", {})
+                if isinstance(fn_args, str):
+                    fn_args = json.loads(fn_args)
+                cprint(f"[mcp] → {fn_name}({fn_args})", "magenta")
+                result_str = robot.call(fn_name, fn_args)
+                messages.append({"role": "tool", "content": result_str})
+
+            # Round 2: stream the spoken reply given tool results
+            return _stream_chat(messages, on_sentence, timeout=60)
+
+        # ── No tool call — speak the direct content reply ─────────────────────
+        direct = message.get("content", "").strip()
+        if direct:
+            _speak_text(direct, on_sentence)
+            return direct
+
+        # Fallback: round 1 gave neither content nor tool call — stream fresh
+        return _stream_chat(messages, on_sentence, timeout=60)
 
     except requests.exceptions.ConnectionError:
         return "Sorry, I cannot reach my brain right now. Is Ollama running?"
     except Exception as exc:
+        cprint(f"[llm] Error: {exc}", "red")
         return f"Error: {exc}"
 
 
-def run_demo_mode(voice):
+def run_demo_mode(voice, robot: RobotMCP):
     """Text input mode — for testing without a microphone."""
     cprint("Demo mode — type your message (or 'quit' to exit)", "yellow")
     history = []
@@ -243,12 +437,14 @@ def run_demo_mode(voice):
             speak(voice, "Goodbye!")
             break
         cprint("🧠 Thinking...", "yellow")
-        response = ask_ollama_stream(user_input, history,
-                                     on_sentence=lambda s: speak(voice, s))
+        response = ask_ollama_with_tools(
+            user_input, history, robot, voice,
+            on_sentence=lambda s: speak(voice, s)
+        )
         history.append({"human": user_input, "assistant": response})
 
 
-def run_voice_mode(voice, mic_index: int | None):
+def run_voice_mode(voice, robot: RobotMCP, mic_index: int | None):
     """Main voice loop — listen → transcribe → respond → repeat."""
     cprint(f"🎤 Voice mode — listening on mic {mic_index or 'default'}", "green")
     cprint("Press Ctrl+C to stop.\n", "white")
@@ -280,8 +476,10 @@ def run_voice_mode(voice, mic_index: int | None):
 
             cprint("🧠 Thinking...", "yellow")
             t0       = time.time()
-            response = ask_ollama_stream(text, history,
-                                         on_sentence=lambda s: speak(voice, s))
+            response = ask_ollama_with_tools(
+                text, history, robot, voice,
+                on_sentence=lambda s: speak(voice, s)
+            )
             cprint(f"  ({time.time()-t0:.1f}s total)", "white")
             history.append({"human": text, "assistant": response})
 
@@ -299,15 +497,19 @@ def main():
     parser.add_argument("--list-mics", action="store_true", help="List available microphones")
     parser.add_argument("--mic",       type=int, default=None, help="Microphone device index")
     parser.add_argument("--model",     default=WHISPER_MODEL, help="Whisper model (tiny/base/small)")
+    parser.add_argument("--mock",      action="store_true",
+                        help="Mock hardware mode — no physical servos or IMU needed")
     args = parser.parse_args()
 
     install_deps()
 
     cprint("═══════════════════════════════════════════════", "cyan")
-    cprint(" HUMN Robot — Voice Loop", "cyan", attrs=["bold"])
+    cprint(" HUMN Robot — Voice Loop + MCP Tools", "cyan", attrs=["bold"])
     cprint("═══════════════════════════════════════════════", "cyan")
     cprint(f" Whisper model : {args.model}", "white")
     cprint(f" Ollama model  : {OLLAMA_MODEL}", "white")
+    cprint(f" MCP tools     : {len(MCP_TOOLS)}", "white")
+    cprint(f" Hardware      : {'mock' if args.mock else 'live'}", "white")
     cprint(f" Mode          : {'demo (text)' if args.demo else 'voice'}", "white")
     cprint("═══════════════════════════════════════════════\n", "cyan")
 
@@ -315,12 +517,15 @@ def main():
         list_mics()
         return
 
+    # Initialise MCP robot controller (handles servo/IMU hardware)
+    robot = RobotMCP(mock=args.mock)
+
     voice = init_tts()
 
     if args.demo:
-        run_demo_mode(voice)
+        run_demo_mode(voice, robot)
     else:
-        run_voice_mode(voice, args.mic)
+        run_voice_mode(voice, robot, args.mic)
 
 
 if __name__ == "__main__":
