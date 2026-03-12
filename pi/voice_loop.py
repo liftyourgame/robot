@@ -454,7 +454,7 @@ def _trigger_sounds(text: str, robot: RobotMCP):
     for sound_name, keywords in SOUND_TRIGGERS.items():
         if words & keywords:
             cprint(f"[sound] keyword match → play_sound({sound_name}, 5s)", "magenta")
-            robot.call("play_sound", {"name": sound_name, "max_seconds": 5})
+            robot.call("play_sound", {"name": sound_name, "max_seconds": 20})
             break  # one sound at a time
 
 

@@ -350,7 +350,7 @@ class RobotMCP:
             "read_imu":   lambda: self.read_imu(),
             "get_joints": lambda: self.get_joints(),
             "stop_all":   lambda: self.stop_all(),
-            "play_sound": lambda: self.play_sound(arguments.get("name", "")),
+            "play_sound": lambda: self.play_sound(arguments.get("name", ""), arguments.get("max_seconds", 0)),
         }
         fn = dispatch.get(tool_name)
         if fn is None:
