@@ -52,7 +52,7 @@ SILENCE_THRESH   = 500           # RMS below this = silence (skip transcription)
 PIPER_MODEL      = os.path.expanduser("~/voices/en_US-ryan-high.onnx")
 
 SYSTEM_PROMPT = (
-    "You are HUMN, a friendly humanoid robot. You can physically move your body "
+    "You are The Professor, a friendly humanoid robot. You can physically move your body "
     "using tools. Use move_joint or set_pose when asked to perform physical actions "
     "like waving, nodding, or looking around. "
     "Use play_sound with name='soul' whenever asked about your soul, feelings, "
@@ -445,14 +445,16 @@ def _tokenise(text: str) -> set:
 
 def _trigger_sounds(text: str, robot: RobotMCP):
     """
-    Check prompt against SOUND_TRIGGERS and fire matching sounds immediately,
-    before the LLM responds. More reliable than waiting for tool-calling.
+    Check prompt against SOUND_TRIGGERS and play matching sounds synchronously
+    before the LLM responds. Blocking ensures the ALSA device is free when
+    Piper TTS starts — hardware devices don't support concurrent playback.
+    A max_seconds cap keeps the pause dramatic but brief.
     """
     words = _tokenise(text)
     for sound_name, keywords in SOUND_TRIGGERS.items():
         if words & keywords:
-            cprint(f"[sound] keyword match → play_sound({sound_name})", "magenta")
-            robot.call("play_sound", {"name": sound_name})
+            cprint(f"[sound] keyword match → play_sound({sound_name}, 5s)", "magenta")
+            robot.call("play_sound", {"name": sound_name, "max_seconds": 5})
             break  # one sound at a time
 
 

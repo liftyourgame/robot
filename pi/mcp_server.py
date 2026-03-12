@@ -313,20 +313,27 @@ class RobotMCP:
             self.move_joint(joint, JOINTS[joint][4])
         return {"status": "ok", "message": "All joints returned to home position"}
 
-    def play_sound(self, name: str) -> dict:
-        """Play a named sound file via aplay (non-blocking)."""
+    def play_sound(self, name: str, max_seconds: int = 0) -> dict:
+        """
+        Play a named sound file via aplay.
+
+        max_seconds=0  → play the full file, blocking until done.
+        max_seconds=N  → stop after N seconds (uses `timeout` command), blocking.
+
+        Always blocking so callers know when the audio device is free again.
+        ALSA hardware devices (plughw:0,0) do not support concurrent playback.
+        """
         if name not in SOUNDS:
             return {"error": f"Unknown sound '{name}'. Available: {', '.join(SOUNDS.keys())}"}
         path = SOUNDS[name]
-        cprint(f"[mcp] play_sound: {name} ({path})", "cyan")
+        cprint(f"[mcp] play_sound: {name} ({path})"
+               + (f" [{max_seconds}s]" if max_seconds else ""), "cyan")
         try:
-            # Non-blocking — robot can keep talking while music plays
-            subprocess.Popen(
-                ["aplay", "-D", "plughw:0,0", "-q", path],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            return {"sound": name, "status": "playing"}
+            cmd = ["aplay", "-D", "plughw:0,0", "-q", path]
+            if max_seconds:
+                cmd = ["timeout", str(max_seconds)] + cmd
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return {"sound": name, "status": "done"}
         except Exception as exc:
             return {"error": str(exc)}
 
