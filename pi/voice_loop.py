@@ -2,7 +2,7 @@
 """
 pi/voice_loop.py
 
-HUMN Robot — Voice interaction loop with MCP tool calling.
+The Professor — Voice interaction loop with MCP tool calling.
 Pipeline: microphone → Whisper STT → Ollama (tool call) → MCP → Piper TTS → speaker
 
 The LLM can call real robot tools (move joints, strike poses, read IMU) via
@@ -50,6 +50,12 @@ RECORD_SECONDS   = 5             # how long to listen each turn
 SAMPLE_RATE      = 16000         # Hz — Whisper expects 16kHz
 SILENCE_THRESH   = 500           # RMS below this = silence (skip transcription)
 PIPER_MODEL      = os.path.expanduser("~/voices/en_US-ryan-high.onnx")
+
+# ─── AUDIO DEVICE CONFIG ──────────────────────────────────────────────────────
+# Default: plughw:0,0 (USB audio or built-in)
+# I²S MAX98357A amp: update to "plughw:1,0" (or check `aplay -l` after wiring)
+# I²S INMP441 mic:  configure via /etc/asound.conf and set mic index via --mic
+ALSA_SPEAKER_DEVICE = "plughw:0,0"
 
 SYSTEM_PROMPT = (
     "You are The Professor, a friendly humanoid robot. You can physically move your body "
@@ -121,18 +127,17 @@ def init_tts():
     return PiperVoice.load(PIPER_MODEL)
 
 
-_SPEAK_WAV  = "/tmp/humn_speak.wav"
-_ALSA_DEVICE = "plughw:0,0"
+_SPEAK_WAV = "/tmp/professor_speak.wav"
 
 def speak(voice, text: str):
     """Synthesise text with Piper and play via aplay."""
-    cprint(f"🤖 HUMN: {text}", "cyan", attrs=["bold"])
+    cprint(f"🤖 The Professor: {text}", "cyan", attrs=["bold"])
     buf = io.BytesIO()
     with wave.open(buf, "wb") as wf:
         voice.synthesize_wav(text, wf)
     with open(_SPEAK_WAV, "wb") as f:
         f.write(buf.getvalue())
-    subprocess.run(["aplay", "-D", _ALSA_DEVICE, "-q", _SPEAK_WAV])
+    subprocess.run(["aplay", "-D", ALSA_SPEAKER_DEVICE, "-q", _SPEAK_WAV])
 
 
 def list_mics():
@@ -399,8 +404,8 @@ def ask_ollama_with_tools(
                    "Falling back to /api/generate (no tools).", "yellow")
             context = SYSTEM_PROMPT + "\n\n"
             for turn in history[-1:]:
-                context += f"Human: {turn['human']}\nHUMN: {turn['assistant']}\n\n"
-            context += f"Human: {prompt}\nHUMN:"
+                context += f"Human: {turn['human']}\nThe Professor: {turn['assistant']}\n\n"
+            context += f"Human: {prompt}\nThe Professor:"
             return _stream_generate(context, on_sentence, timeout=60)
 
         resp.raise_for_status()
@@ -492,7 +497,7 @@ def run_voice_mode(voice, robot: RobotMCP, mic_index: int | None):
     cprint("Press Ctrl+C to stop.\n", "white")
     history = []
 
-    speak(voice, "Hello! I am HUMN. How can I help you?")
+    speak(voice, "Hello! I am The Professor. How can I help you?")
 
     while True:
         try:
@@ -535,7 +540,7 @@ def run_voice_mode(voice, robot: RobotMCP, mic_index: int | None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="HUMN Robot Voice Loop")
+    parser = argparse.ArgumentParser(description="The Professor — Robot Voice Loop")
     parser.add_argument("--demo",      action="store_true", help="Text input mode (no mic)")
     parser.add_argument("--list-mics", action="store_true", help="List available microphones")
     parser.add_argument("--mic",       type=int, default=None, help="Microphone device index")
@@ -547,11 +552,12 @@ def main():
     install_deps()
 
     cprint("═══════════════════════════════════════════════", "cyan")
-    cprint(" HUMN Robot — Voice Loop + MCP Tools", "cyan", attrs=["bold"])
+    cprint(" The Professor — Voice Loop + MCP Tools", "cyan", attrs=["bold"])
     cprint("═══════════════════════════════════════════════", "cyan")
     cprint(f" Whisper model : {args.model}", "white")
     cprint(f" Ollama model  : {OLLAMA_MODEL}", "white")
     cprint(f" MCP tools     : {len(MCP_TOOLS)}", "white")
+    cprint(f" Speaker device: {ALSA_SPEAKER_DEVICE}", "white")
     cprint(f" Hardware      : {'mock' if args.mock else 'live'}", "white")
     cprint(f" Mode          : {'demo (text)' if args.demo else 'voice'}", "white")
     cprint("═══════════════════════════════════════════════\n", "cyan")
