@@ -68,5 +68,5 @@ All ordered Mar 9, 2026 unless noted.
 
 | Item | Supplier | Notes |
 |------|----------|-------|
-| Bambu Lab P1S 3D Printer | Bambu Lab | $599.00 — awaiting delivery |
+| Bambu Lab P1S 3D Printer | Bambu Lab | $599.00 — arrived Mar 13, 2026 |
 | Floating Damper Feet | Bambu Lab | $7.99 — P1S/X1 upgrade |

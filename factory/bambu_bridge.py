@@ -52,6 +52,10 @@ DEFAULT_SERIAL       = os.environ.get("BAMBU_SERIAL",       "AABBCCDD0000000")
 DEFAULT_ACCESS_CODE  = os.environ.get("BAMBU_ACCESS_CODE",  "12345678")
 MQTT_PORT            = 8883              # Bambu local MQTT port (TLS)
 
+SMTP2GO_API_KEY      = os.environ.get("SMTP2GO_API_KEY", "")
+ALERT_FROM           = os.environ.get("ALERT_FROM", "")
+ALERT_TO             = os.environ.get("ALERT_TO", "")
+
 IGNITION_HOST        = os.environ.get("IGNITION_HOST", "localhost")
 IGNITION_OPCUA_PORT  = int(os.environ.get("IGNITION_OPCUA_PORT", "62541"))
 # OPC-UA node path — must match tags created in Ignition Designer
@@ -134,6 +138,32 @@ def extract_print_data(payload: dict) -> dict:
 
     data["last_updated"] = datetime.now(timezone.utc).isoformat()
     return data
+
+
+def send_alert(subject: str, body: str, cprint_fn):
+    """Send an email alert via SMTP2GO HTTP API (works through any firewall)."""
+    if not SMTP2GO_API_KEY or not ALERT_FROM or not ALERT_TO:
+        cprint_fn("[alert] ⚠️  SMTP2GO not configured — skipping email", "yellow")
+        return
+    import requests
+    try:
+        resp = requests.post(
+            "https://api.smtp2go.com/v3/email/send",
+            json={
+                "api_key":  SMTP2GO_API_KEY,
+                "to":       [ALERT_TO],
+                "sender":   ALERT_FROM,
+                "subject":  subject,
+                "text_body": body,
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200 and resp.json().get("data", {}).get("succeeded"):
+            cprint_fn(f"[alert] ✅ Email sent to {ALERT_TO}", "green")
+        else:
+            cprint_fn(f"[alert] ⚠️  SMTP2GO error: {resp.text[:120]}", "yellow")
+    except Exception as exc:
+        cprint_fn(f"[alert] ❌ {exc}", "red")
 
 
 def push_to_ignition(tag_data: dict, cprint_fn, args):
@@ -220,6 +250,8 @@ def run_bridge(args, cprint_fn):
     def on_disconnect(client, userdata, rc):
         cprint_fn(f"[mqtt] ⚠️  Disconnected (rc={rc}) — will auto-reconnect", "yellow")
 
+    last_gcode_state = {"value": None}  # track state changes for alerting
+
     def on_message(client, userdata, msg):
         nonlocal last_push
         try:
@@ -230,6 +262,19 @@ def run_bridge(args, cprint_fn):
         tag_data = extract_print_data(payload)
         if not tag_data:
             return
+
+        # Alert on state transitions to PAUSE or FAILED
+        new_state = tag_data.get("gcode_state")
+        if new_state and new_state != last_gcode_state["value"]:
+            if new_state in ("PAUSE", "FAILED"):
+                subtask = tag_data.get("subtask_name", "unknown")
+                progress = tag_data.get("print_percent", "?")
+                send_alert(
+                    subject=f"🖨️ Printer {new_state} — {subtask}",
+                    body=f"Printer state changed to {new_state}.\nFile: {subtask}\nProgress: {progress}%\nAction required — check the printer.",
+                    cprint_fn=cprint_fn,
+                )
+            last_gcode_state["value"] = new_state
 
         now = time.time()
         # Rate-limit pushes: max 1 per second, or on heartbeat interval
