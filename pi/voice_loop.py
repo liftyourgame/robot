@@ -362,11 +362,15 @@ def ask_ollama_with_tools(
     words = _tokenise(prompt)
     if not words & ACTION_KEYWORDS:
         cprint("[llm] fast path (no action keywords)", "white")
-        return _stream_chat(messages, on_sentence, timeout=60)
+        t0 = time.time()
+        result = _stream_chat(messages, on_sentence, timeout=60)
+        cprint(f"[llm] ⏱  thinking: {time.time()-t0:.1f}s", "yellow")
+        return result
 
     try:
         # ── Round 1: tool-detection (non-streaming, tight token budget) ───────
         cprint("[llm] action detected — checking for tool call", "magenta")
+        t0 = time.time()
         resp = requests.post(
             f"{OLLAMA_HOST}/api/chat",
             json={
@@ -400,6 +404,7 @@ def ask_ollama_with_tools(
             return _stream_generate(context, on_sentence, timeout=60)
 
         resp.raise_for_status()
+        cprint(f"[llm] ⏱  thinking (round 1): {time.time()-t0:.1f}s", "yellow")
         message = resp.json().get("message", {})
 
         # ── Execute tool calls if requested ───────────────────────────────────
@@ -472,10 +477,12 @@ def run_demo_mode(voice, robot: RobotMCP):
             break
         _trigger_sounds(user_input, robot)
         cprint("🧠 Thinking...", "yellow")
+        t0       = time.time()
         response = ask_ollama_with_tools(
             user_input, history, robot, voice,
             on_sentence=lambda s: speak(voice, s)
         )
+        cprint(f"  ({time.time()-t0:.1f}s total)", "white")
         history.append({"human": user_input, "assistant": response})
 
 
