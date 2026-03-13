@@ -2,18 +2,15 @@
 """
 factory/bambu_bridge.py
 
-Bridges Bambu Lab P1S local MQTT → Ignition tag provider via HTTP/WebDev.
+Bridges Bambu Lab P1S local MQTT → Ignition tag provider via OPC-UA.
 
 Architecture:
-    P1S (LAN MQTT port 8883, TLS) ──► this script ──► Ignition WebDev module
-                                                      (writes tag values via
-                                                       HTTP POST to a WebDev
-                                                       endpoint, OR directly
-                                                       via Ignition's built-in
-                                                       Tag REST API on port 8088)
+    P1S (LAN MQTT port 8883, TLS) ──► this script ──► Ignition OPC-UA server
+                                                      (built-in, port 62541,
+                                                       no extra modules needed)
 
 Requirements:
-    pip install paho-mqtt requests termcolor
+    pip install paho-mqtt termcolor asyncua
 
 Usage:
     python3 bambu_bridge.py --printer_ip 192.168.1.YYY --serial AABBCCDD \
@@ -56,8 +53,10 @@ DEFAULT_ACCESS_CODE  = os.environ.get("BAMBU_ACCESS_CODE",  "12345678")
 MQTT_PORT            = 8883              # Bambu local MQTT port (TLS)
 
 IGNITION_HOST        = os.environ.get("IGNITION_HOST", "localhost")
-IGNITION_PORT        = int(os.environ.get("IGNITION_PORT", "8088"))
-IGNITION_TAG_PREFIX  = "[default]Factory/Printer"
+IGNITION_OPCUA_PORT  = int(os.environ.get("IGNITION_OPCUA_PORT", "62541"))
+# OPC-UA node path — must match tags created in Ignition Designer
+# Format: ns=1;s=[default]Factory/Printer/<tag_name>
+IGNITION_TAG_PREFIX  = os.environ.get("IGNITION_TAG_PREFIX", "[default]Factory/Printer")
 IGNITION_USER        = os.environ.get("IGNITION_USER", "admin")
 IGNITION_PASS        = os.environ.get("IGNITION_PASS", "")
 
@@ -67,8 +66,7 @@ HEARTBEAT_INTERVAL   = 30
 
 def install_deps():
     """Install required packages if missing."""
-    for pkg in ["paho-mqtt", "requests", "termcolor"]:
-        module = pkg.replace("-", "_").split("==")[0]
+    for pkg, module in [("paho-mqtt", "paho"), ("termcolor", "termcolor"), ("asyncua", "asyncua")]:
         try:
             __import__(module)
         except ImportError:
@@ -127,7 +125,12 @@ def extract_print_data(payload: dict) -> dict:
     if "subtask_name" in msg:
         data["subtask_name"]   = str(msg["subtask_name"])
     if "wifi_signal" in msg:
-        data["wifi_signal"]    = int(msg["wifi_signal"])
+        # Bambu reports wifi_signal as e.g. '-22dBm' — strip non-numeric chars
+        raw_wifi = str(msg["wifi_signal"]).replace("dBm", "").strip()
+        try:
+            data["wifi_signal"] = int(raw_wifi)
+        except ValueError:
+            data["wifi_signal"] = 0
 
     data["last_updated"] = datetime.now(timezone.utc).isoformat()
     return data
@@ -135,36 +138,62 @@ def extract_print_data(payload: dict) -> dict:
 
 def push_to_ignition(tag_data: dict, cprint_fn, args):
     """
-    Write tag values to Ignition via the Gateway REST API (port 8088).
-    Each tag must already exist in Ignition under IGNITION_TAG_PREFIX.
-    Create them as Memory tags in Ignition Designer first.
+    Write tag values to Ignition via its built-in OPC-UA server (port 62541).
+
+    No extra Ignition modules required — OPC-UA is always available.
+
+    Each tag must exist in Ignition Designer as a Memory tag under:
+        [default]Factory/Printer/<tag_name>
+
+    OPC-UA node IDs use namespace 1 and the full Ignition tag path:
+        ns=1;s=[default]Factory/Printer/bed_temp
     """
-    import requests
+    import asyncio
+    from asyncua import Client as OpcuaClient, ua
 
-    url = f"http://{args.ignition_host}:{args.ignition_port}/data/tag-provider/default/tag/write"
+    # Explicit OPC-UA variant types — required when tag has null value in Ignition
+    TAG_TYPES = {
+        "bed_temp":          ua.VariantType.Float,
+        "nozzle_temp":       ua.VariantType.Float,
+        "nozzle_target":     ua.VariantType.Float,
+        "chamber_temp":      ua.VariantType.Float,
+        "fan_speed_pct":     ua.VariantType.Int32,
+        "print_percent":     ua.VariantType.Int32,
+        "layer_num":         ua.VariantType.Int32,
+        "total_layer_num":   ua.VariantType.Int32,
+        "remaining_minutes": ua.VariantType.Int32,
+        "gcode_state":       ua.VariantType.String,
+        "subtask_name":      ua.VariantType.String,
+        "wifi_signal":       ua.VariantType.Int32,
+        "last_updated":      ua.VariantType.String,
+    }
 
-    tag_writes = []
-    for name, value in tag_data.items():
-        tag_writes.append({
-            "path": f"{args.tag_prefix}/{name}",
-            "value": value
-        })
+    async def _write():
+        url = f"opc.tcp://{args.ignition_host}:{args.ignition_opcua_port}"
+        # OPC-UA None security policy cannot encrypt passwords — use anonymous auth.
+        # Enable anonymous access in Ignition: Config → OPC-UA Server → User Token Policies → Anonymous
+        client = OpcuaClient(url=url, timeout=5)
+        async with client:
+            ok = 0
+            for name, value in tag_data.items():
+                # Tag Providers are exposed at ns=2 in Ignition 8 OPC-UA
+                node_id = f"ns=2;s={args.tag_prefix}/{name}"
+                try:
+                    node     = client.get_node(node_id)
+                    vtype    = TAG_TYPES.get(name)
+                    dv       = ua.DataValue(ua.Variant(value, vtype))
+                    await node.write_value(dv)
+                    ok += 1
+                except Exception as exc:
+                    cprint_fn(f"[opcua] ⚠️  {name}: {exc}", "yellow")
+            cprint_fn(f"[ignition] ✅ Pushed {ok}/{len(tag_data)} tags via OPC-UA", "green")
 
     try:
-        resp = requests.post(
-            url,
-            json=tag_writes,
-            auth=(args.ignition_user, args.ignition_pass),
-            timeout=5
-        )
-        if resp.status_code == 200:
-            cprint_fn(f"[ignition] ✅ Pushed {len(tag_writes)} tags", "green")
-        else:
-            cprint_fn(f"[ignition] ⚠️  HTTP {resp.status_code}: {resp.text[:120]}", "yellow")
-    except requests.exceptions.ConnectionError:
-        cprint_fn("[ignition] ❌ Cannot reach Ignition — is the gateway running?", "red")
+        asyncio.run(_write())
+    except ConnectionRefusedError:
+        cprint_fn(f"[ignition] ❌ OPC-UA connection refused — is Ignition running on port {args.ignition_opcua_port}?", "red")
     except Exception as exc:
-        cprint_fn(f"[ignition] ❌ Error: {exc}", "red")
+        cprint_fn(f"[ignition] ❌ OPC-UA error: {exc}", "red")
 
 
 def run_bridge(args, cprint_fn):
@@ -249,10 +278,10 @@ def main():
     parser.add_argument("--printer_ip",    default=DEFAULT_PRINTER_IP,  help="P1S IP address")
     parser.add_argument("--serial",        default=DEFAULT_SERIAL,       help="Printer serial number")
     parser.add_argument("--access_code",   default=DEFAULT_ACCESS_CODE,  help="8-digit WLAN access code")
-    parser.add_argument("--ignition_host", default=IGNITION_HOST)
-    parser.add_argument("--ignition_port", default=IGNITION_PORT, type=int)
-    parser.add_argument("--ignition_user", default=IGNITION_USER)
-    parser.add_argument("--ignition_pass", default=IGNITION_PASS)
+    parser.add_argument("--ignition_host",       default=IGNITION_HOST)
+    parser.add_argument("--ignition_opcua_port", default=IGNITION_OPCUA_PORT, type=int)
+    parser.add_argument("--ignition_user",       default=IGNITION_USER)
+    parser.add_argument("--ignition_pass",       default=IGNITION_PASS)
     parser.add_argument("--tag_prefix",    default=IGNITION_TAG_PREFIX,
                         help="Ignition tag path prefix (e.g. [default]Factory/Printer)")
     args = parser.parse_args()
@@ -261,7 +290,7 @@ def main():
     cprint_fn(" HUMN Factory — Bambu P1S MQTT Bridge", "cyan")
     cprint_fn("═══════════════════════════════════════════════", "cyan")
     cprint_fn(f" Printer  : {args.printer_ip}  (serial: {args.serial})", "white")
-    cprint_fn(f" Ignition : http://{args.ignition_host}:{args.ignition_port}", "white")
+    cprint_fn(f" Ignition : opc.tcp://{args.ignition_host}:{args.ignition_opcua_port}", "white")
     cprint_fn(f" Tag path : {args.tag_prefix}/<name>", "white")
     cprint_fn("───────────────────────────────────────────────", "cyan")
     cprint_fn(" Tags written:", "white")
