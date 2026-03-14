@@ -289,24 +289,24 @@ def make_H04_neck_collar() -> None:
     HEIGHT   = 40.0
     FL_OD    = 88.0    # flange outer diameter
     FL_T     = 3.0     # flange thickness
-    PCD      = 52.0    # insert bolt-circle diameter
+    PCD      = 76.0    # insert bolt-circle diameter (mid-flange: OD/2=34 → FL_OD/2=44 → mid=38 → PCD=76)
 
+    # Single revolution profile: tube (OD/ID) + flange step at top.
+    # Profile traces the right-hand cross-section clockwise from inner-bottom.
     collar = (
         cq.Workplane("XY")
-        .circle(OD / 2).circle(ID / 2)
-        .extrude(HEIGHT)
+        .moveTo(ID / 2, 0)
+        .lineTo(OD / 2, 0)
+        .lineTo(OD / 2, HEIGHT)
+        .lineTo(FL_OD / 2, HEIGHT)
+        .lineTo(FL_OD / 2, HEIGHT + FL_T)
+        .lineTo(ID / 2, HEIGHT + FL_T)
+        .close()
+        .revolve(360, (0, 0, 0), (0, 1, 0))
     )
 
-    # Top flange ring
-    flange = (
-        cq.Workplane("XY")
-        .workplane(offset=HEIGHT)
-        .circle(FL_OD / 2).circle(OD / 2)
-        .extrude(FL_T)
-    )
-    collar = collar.union(flange)
-
-    # Bottom insert bosses
+    # 4 × M3 insert bosses on the bottom face for head-pan servo
+    # PCD chosen to land in the flange area (OD/2 < insert_r < FL_OD/2)
     collar = m3_inserts_on_bottom(collar, PCD, count=4, start_angle_deg=45)
 
     save("H04_NeckCollar", collar)
@@ -517,11 +517,8 @@ def make_LA03_forearm() -> None:
     HEIGHT = 90.0
     PCD    = 26.0
 
-    forearm = (
-        cq.Workplane("XY")
-        .circle(OD / 2).circle((OD - WALL * 2) / 2)
-        .extrude(HEIGHT)
-    )
+    # Use _tapered_tube with equal diameters → straight Y-axis hollow cylinder
+    forearm = _tapered_tube(OD, OD, HEIGHT)
 
     r = PCD / 2
     for angle_deg in [0, 180]:
@@ -573,11 +570,7 @@ def make_LL02_shin() -> None:
     HEIGHT = 150.0
     PCD    = 30.0
 
-    shin = (
-        cq.Workplane("XY")
-        .circle(OD / 2).circle((OD - WALL * 2) / 2)
-        .extrude(HEIGHT)
-    )
+    shin = _tapered_tube(OD, OD, HEIGHT)
 
     r = PCD / 2
     for angle_deg in [0, 180]:
