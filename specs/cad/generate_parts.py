@@ -717,6 +717,131 @@ PARTS: dict = {
 }
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+#  ASSEMBLY  — positions all parts in world space and exports one STEP file
+# ═════════════════════════════════════════════════════════════════════════════
+
+def make_assembly() -> None:
+    """
+    Build full robot assembly (50% scale, 753 mm tall, Y-up).
+
+    Part stack from ground (Y=0) up:
+        Foot sole → Shin → Thigh → Hip → Chest → Neck → Head
+
+    Left/right pairs share the same part geometry; right-side parts are
+    mirrored across the YZ plane (180° rotation around the world Y axis).
+
+    Output: specs/cad/step/RobotAssembly.step
+    """
+
+    def load(name: str) -> cq.Workplane:
+        """Import a previously generated STEP file."""
+        path = os.path.join(OUT, f"{name}.step")
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f"{name}.step not found — run without --part first to generate all parts"
+            )
+        return cq.importers.importStep(path)
+
+    # ── World Y positions (bottom of each part, mm) ───────────────────────────
+    FOOT_H    = 10
+    SHIN_H    = 150
+    THIGH_H   = 170
+    HIP_H     = 80
+    CHEST_H   = 170
+    NECK_H    = 43    # collar 40 + top flange 3
+
+    # Head: local Y runs from -45 (open neck bottom) to +85 (crown).
+    # We want the neck opening (local Y = -45) to sit at the neck top.
+    HEAD_LOCAL_BOTTOM = 45   # abs(HEAD_OPEN_Y) from make_H01_rear_dome
+
+    y_foot   = 0
+    y_shin   = y_foot  + FOOT_H
+    y_thigh  = y_shin  + SHIN_H
+    y_hip    = y_thigh + THIGH_H
+    y_chest  = y_hip   + HIP_H
+    y_neck   = y_chest + CHEST_H
+    # Head local origin placed so its bottom cut (local Y = -45) aligns with y_neck + NECK_H
+    y_head   = y_neck  + NECK_H + HEAD_LOCAL_BOTTOM   # = world Y of head ellipsoid centre
+
+    # ── Horizontal offsets (mm from spine centre-line) ───────────────────────
+    LEG_X      = 60.0   # leg cylinder centre-line
+    ARM_X      = 95.0   # arm cylinder centre-line (≈ shoulder width / 2)
+    SHOULDER_Y = y_neck - 10   # world Y of shoulder attachment (near chest top)
+
+    # Upper arm: Y=0 = narrow (elbow), Y=110 = wide (shoulder).
+    # Position so the wide end (Y=110) is at SHOULDER_Y.
+    ARM_TOP_H  = 110    # LA02 height
+    ARM_BOT_H  = 90     # LA03 height
+
+    # ── Colour scheme ─────────────────────────────────────────────────────────
+    CLR_HEAD  = cq.Color(0.9, 0.85, 0.78, 1)   # warm off-white
+    CLR_TORSO = cq.Color(0.3, 0.35, 0.42, 1)   # slate blue-grey
+    CLR_LIMB  = cq.Color(0.22, 0.25, 0.30, 1)  # dark grey
+
+    def loc(x: float, y: float, z: float = 0) -> cq.Location:
+        """Simple translation Location."""
+        return cq.Location(cq.Vector(x, y, z))
+
+    def loc_mirror_x(x: float, y: float, z: float = 0) -> cq.Location:
+        """Mirror across YZ plane: translate to (+x,y,z) then rotate 180° around Y."""
+        return cq.Location(cq.Vector(x, y, z), cq.Vector(0, 1, 0), 180)
+
+    cprint("  Loading parts...", "cyan")
+    assy = cq.Assembly(name="RobotBody_50pct")
+
+    # ── Head (three shells share same origin) ─────────────────────────────────
+    head_loc = loc(0, y_head)
+    assy.add(load("H01_RearDome"),  name="H01", color=CLR_HEAD,  loc=head_loc)
+    assy.add(load("H02_FrontFace"), name="H02", color=CLR_HEAD,  loc=head_loc)
+    assy.add(load("H03_TopCap"),    name="H03", color=CLR_HEAD,  loc=head_loc)
+    cprint("    head ✓", "white")
+
+    # ── Neck + torso ──────────────────────────────────────────────────────────
+    assy.add(load("H04_NeckCollar"),      name="H04", color=CLR_TORSO, loc=loc(0, y_neck))
+    assy.add(load("T01_UpperChestFront"), name="T01", color=CLR_TORSO, loc=loc(0, y_chest))
+    assy.add(load("T05_HipPelvis"),       name="T05", color=CLR_TORSO, loc=loc(0, y_hip))
+    cprint("    torso ✓", "white")
+
+    # ── Left leg ──────────────────────────────────────────────────────────────
+    assy.add(load("LL01_Thigh"),    name="LL01_L", color=CLR_LIMB, loc=loc(-LEG_X, y_thigh))
+    assy.add(load("LL02_Shin"),     name="LL02_L", color=CLR_LIMB, loc=loc(-LEG_X, y_shin))
+    assy.add(load("LL04_FootSole"), name="LL04_L", color=CLR_LIMB, loc=loc(-LEG_X, y_foot))
+    cprint("    left leg ✓", "white")
+
+    # ── Right leg (mirrored) ──────────────────────────────────────────────────
+    assy.add(load("LL01_Thigh"),    name="LL01_R", color=CLR_LIMB, loc=loc_mirror_x(LEG_X, y_thigh))
+    assy.add(load("LL02_Shin"),     name="LL02_R", color=CLR_LIMB, loc=loc_mirror_x(LEG_X, y_shin))
+    assy.add(load("LL04_FootSole"), name="LL04_R", color=CLR_LIMB, loc=loc_mirror_x(LEG_X, y_foot))
+    cprint("    right leg ✓", "white")
+
+    # ── Left arm (hanging: wide shoulder end at top) ──────────────────────────
+    # Translate so local Y=ARM_TOP_H (shoulder) aligns with SHOULDER_Y in world
+    assy.add(load("LA02_UpperArm"), name="LA02_L", color=CLR_LIMB,
+             loc=loc(-ARM_X, SHOULDER_Y - ARM_TOP_H))
+    assy.add(load("LA03_Forearm"),  name="LA03_L", color=CLR_LIMB,
+             loc=loc(-ARM_X, SHOULDER_Y - ARM_TOP_H - ARM_BOT_H))
+    cprint("    left arm ✓", "white")
+
+    # ── Right arm (mirrored) ──────────────────────────────────────────────────
+    assy.add(load("LA02_UpperArm"), name="LA02_R", color=CLR_LIMB,
+             loc=loc_mirror_x(ARM_X, SHOULDER_Y - ARM_TOP_H))
+    assy.add(load("LA03_Forearm"),  name="LA03_R", color=CLR_LIMB,
+             loc=loc_mirror_x(ARM_X, SHOULDER_Y - ARM_TOP_H - ARM_BOT_H))
+    cprint("    right arm ✓", "white")
+
+    # ── Export ────────────────────────────────────────────────────────────────
+    out_path = os.path.join(OUT, "RobotAssembly.step")
+    cprint("  Exporting assembly STEP (may take a moment)...", "cyan")
+    cq.exporters.export(assy.toCompound(), out_path)
+    cprint(f"  ✅  RobotAssembly.step  →  {out_path}", "green")
+    cprint(
+        f"  Total height: ~{y_head + 85} mm  "
+        f"(foot Y=0 → head crown Y≈{y_head + 85})",
+        "yellow",
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate robot STEP files with CadQuery."
@@ -726,20 +851,24 @@ def main() -> None:
         metavar="KEY",
         help=(
             "Generate a single part by key. "
-            f"Available: {', '.join(PARTS)}. "
-            "Omit to generate all."
+            f"Available: {', '.join(PARTS)}, asm. "
+            "Omit to generate all parts + assembly."
         ),
     )
     args = parser.parse_args()
 
     if args.part:
         key = args.part.lower()
-        if key not in PARTS:
-            cprint(f"Unknown part '{key}'. Valid keys: {', '.join(PARTS)}", "red")
+        if key == "asm":
+            cprint("\nBuilding assembly...", "cyan")
+            make_assembly()
+        elif key not in PARTS:
+            cprint(f"Unknown part '{key}'. Valid keys: {', '.join(PARTS)}, asm", "red")
             sys.exit(1)
-        label, fn = PARTS[key]
-        cprint(f"\nGenerating {label}...", "cyan")
-        fn()
+        else:
+            label, fn = PARTS[key]
+            cprint(f"\nGenerating {label}...", "cyan")
+            fn()
     else:
         cprint(f"\nGenerating {len(PARTS)} robot parts...\n", "cyan")
         for key, (label, fn) in PARTS.items():
@@ -749,8 +878,14 @@ def main() -> None:
             except Exception as exc:
                 cprint(f"  ❌  {label}: {exc}", "red")
 
+        cprint("\nBuilding assembly...", "cyan")
+        try:
+            make_assembly()
+        except Exception as exc:
+            cprint(f"  ❌  Assembly failed: {exc}", "red")
+
     cprint(f"\nSTEP files → {OUT}", "green")
-    cprint("Onshape: New Document → Import → select all *.step", "yellow")
+    cprint("Onshape: New Document → Import → RobotAssembly.step", "yellow")
 
 
 if __name__ == "__main__":
