@@ -335,53 +335,52 @@ def make_T01_upper_chest_front() -> None:
     SPK_H   = 2.0
     SPK_PCD = SPK_ID + 12.0
 
-    # Hollow shell: outer box minus inner box (more reliable than .shell())
+    # Hollow shell: outer box minus inner box (Y starts at 0, not centred)
     outer = (
         cq.Workplane("XY")
-        .box(W, H, D, centered=(True, True, False))
+        .box(W, H, D, centered=(True, False, False))   # Y: 0→H, Z: 0→D
         .edges("|Z")
         .fillet(FILLET)
     )
-    inner_w = W - WALL * 2
-    inner_h = H - WALL * 2
     inner = (
         cq.Workplane("XY")
-        .box(inner_w, inner_h, D - WALL, centered=(True, True, False))
-        .translate((0, 0, WALL))
+        .box(W - WALL * 2, H - WALL * 2, D - WALL,
+             centered=(True, False, False))
+        .translate((0, WALL, WALL))                    # offset inner by WALL in Y and Z
         .edges("|Z")
         .fillet(max(FILLET - WALL, 1.0))
     )
     front = outer.cut(inner)
 
-    # Speaker ring boss on the interior front face (at z = WALL)
+    # Speaker ring boss on the interior front face (at Z = WALL, centred in XY)
     spk_ring = (
         cq.Workplane("XY")
         .workplane(offset=WALL)
+        .transformed(offset=cq.Vector(0, H / 2, 0))   # centre of chest face
         .circle((SPK_ID / 2) + SPK_RW)
         .circle(SPK_ID / 2)
         .extrude(SPK_H)
     )
     front = front.union(spk_ring)
 
-    # 4 × M3 insert bosses + recesses at speaker PCD
+    # 4 × M3 insert bosses around speaker (at chest centre height H/2)
     r_pcd = SPK_PCD / 2
     for i in range(4):
-        angle  = math.radians(45 + 90 * i)
-        bx     = r_pcd * math.cos(angle)
-        by_xz  = r_pcd * math.sin(angle)   # in XZ plane this becomes bz
-        # Boss protrudes inward from front face (+Z direction from Z=WALL)
+        angle = math.radians(45 + 90 * i)
+        bx    = r_pcd * math.cos(angle)
+        by    = H / 2 + r_pcd * math.sin(angle)   # world Y on the chest face
+        # Boss protrudes inward in +Z from the front face (Z=WALL)
         boss = (
             cq.Workplane("XZ")
             .workplane(offset=WALL)
-            .transformed(offset=cq.Vector(bx, 0, by_xz))
+            .transformed(offset=cq.Vector(bx, 0, by))
             .circle(M3_BOSS / 2)
             .extrude(3)
         )
-        # Recess drills back into the boss from its tip (at Z=WALL+3)
         recess = (
             cq.Workplane("XZ")
             .workplane(offset=WALL + 3)
-            .transformed(offset=cq.Vector(bx, 0, by_xz))
+            .transformed(offset=cq.Vector(bx, 0, by))
             .circle(INS_OD / 2)
             .extrude(-INS_DEPTH)
         )
@@ -408,13 +407,13 @@ def make_T05_hip_pelvis() -> None:
 
     hips = (
         cq.Workplane("XY")
-        .box(W, H, D, centered=(True, True, False))
+        .box(W, H, D, centered=(True, False, True))   # Y: 0→H, X/Z centred
         .edges("|Z")
         .fillet(FILLET)
         .shell(-WALL)
     )
 
-    # Leg servo holes on the bottom face
+    # Leg servo holes on the bottom face (Y = 0)
     for sx, sz in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:
         cx = sx * SRV_PCD / 2
         cz = sz * SRV_PCD / 2
@@ -645,25 +644,26 @@ def make_S01_servo_bracket() -> None:
     SRV_X = 40.0   # servo mounting hole spacing (X)
     SRV_Y = 43.0   # servo mounting hole spacing (Y)
 
-    # Back plate (XY plane, extends in +Z)
+    # Back plate (XY plane, extends in +Z; Y starts at 0)
     back = (
         cq.Workplane("XY")
-        .box(CH_W + T * 2, CH_H, T, centered=(True, True, False))
+        .box(CH_W + T * 2, CH_H, T, centered=(True, False, False))
     )
 
     # Left and right side flanges
     for sign in [1, -1]:
         flange = (
             cq.Workplane("XY")
-            .box(T, CH_H, FL_W, centered=(False, True, False))
+            .box(T, CH_H, FL_W, centered=(False, False, False))
             .translate((sign * CH_W / 2, 0, T))
         )
         back = back.union(flange)
 
     # 4 × servo mounting holes through the back plate
+    # Y positions relative to bracket bottom (Y=0): centred at CH_H/2
     for hx, hy in [
-        (SRV_X / 2, SRV_Y / 2), (SRV_X / 2, -SRV_Y / 2),
-        (-SRV_X / 2, SRV_Y / 2), (-SRV_X / 2, -SRV_Y / 2),
+        (SRV_X / 2, CH_H / 2 + SRV_Y / 2), (SRV_X / 2, CH_H / 2 - SRV_Y / 2),
+        (-SRV_X / 2, CH_H / 2 + SRV_Y / 2), (-SRV_X / 2, CH_H / 2 - SRV_Y / 2),
     ]:
         hole = (
             cq.Workplane("XY")
@@ -676,16 +676,16 @@ def make_S01_servo_bracket() -> None:
     # 2 × M3 insert bosses on rear face (Z = 0, protruding in -Z direction)
     for ix in [CH_W / 2 - 6, -(CH_W / 2 - 6)]:
         boss = (
-            cq.Workplane("XY")           # XY plane normal = +Z; extrude(-3) → -Z
-            .transformed(offset=cq.Vector(ix, 0, 0))
+            cq.Workplane("XY")
+            .transformed(offset=cq.Vector(ix, CH_H / 2, 0))   # mid-height
             .circle(M3_BOSS / 2)
             .extrude(-3)
         )
         recess = (
             cq.Workplane("XY")
-            .transformed(offset=cq.Vector(ix, 0, -3))
+            .transformed(offset=cq.Vector(ix, CH_H / 2, -3))
             .circle(INS_OD / 2)
-            .extrude(INS_DEPTH)           # drills back into the boss in +Z
+            .extrude(INS_DEPTH)
         )
         back = back.union(boss).cut(recess)
 
@@ -831,9 +831,15 @@ def make_assembly() -> None:
     cprint("    right arm ✓", "white")
 
     # ── Export ────────────────────────────────────────────────────────────────
+    # assy.save() correctly applies Location transforms (unlike toCompound()).
+    # Suppress the FutureWarning — it's still the only working STEP export
+    # path for Assembly objects in CadQuery 2.7.
+    import warnings
     out_path = os.path.join(OUT, "RobotAssembly.step")
     cprint("  Exporting assembly STEP (may take a moment)...", "cyan")
-    cq.exporters.export(assy.toCompound(), out_path)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        assy.save(out_path)
     cprint(f"  ✅  RobotAssembly.step  →  {out_path}", "green")
     cprint(
         f"  Total height: ~{y_head + 85} mm  "
